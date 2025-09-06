@@ -573,9 +573,9 @@
   <!-- Hidden background hero image (reveals on Welcome) -->
   <div id="bgMain" class="bg-image" aria-hidden="true" role="img" aria-label="HempHive hero background image"></div>
 
-  <!-- Top emoji -->
+  <!-- Top emoji - removed as requested -->
   <div class="center-container">
-    <div class="hex" id="hex" role="img" aria-label="Hemp leaf and bee emoji">🌿🐝</div>
+    <div class="hex" id="hex" role="img" aria-label="Hemp leaf and bee emoji"></div>
   </div>
 
   <!-- Honeycomb grid (SVG background + buttons perfectly aligned) -->
@@ -718,8 +718,7 @@
     setTimeout(() => {
       var topHex = document.getElementById('hex');
       if (topHex) { topHex.classList.add('fade-out'); }
-      // Show bars shortly after fade begins
-      document.body.classList.add('show-bars');
+      // Bars will now only show after Welcome button is clicked
     }, 1500);
 
     // Generate responsive honeycomb SVG with interactive cells
@@ -883,7 +882,7 @@
           });
 
           // Preserve ring labels (clockwise from top); no Music in the ring
-          var ringLabels = window.__ringLabels || ['About','Shop','Projects','Future','Medical','Resources'];
+          var ringLabels = window.__ringLabels || ['About','Shop','Projects','Chat','Medical','Resources'];
           window.__ringLabels = ringLabels.slice();
 
           // Apply labels to the six neighbors
@@ -982,6 +981,9 @@
       // Show the background image with fade + slow zoom
       if (bg) { bg.classList.add('show'); }
 
+      // Show widescreen bars when Welcome is clicked
+      document.body.classList.add('show-bars');
+
       // Disable interactions on the comb
       if (honey) { honey.style.pointerEvents = 'none'; }
 
@@ -1064,6 +1066,66 @@
       }, 100); // Much faster transition
     }
 
+    // Chat system
+    var chatMessages = [];
+    var chatTimer = null;
+    
+    function addChatMessage(message) {
+      var timestamp = new Date();
+      chatMessages.push({
+        message: message,
+        timestamp: timestamp,
+        id: Date.now() + Math.random()
+      });
+      
+      // Remove messages older than 30 minutes
+      var thirtyMinutesAgo = new Date(timestamp.getTime() - 30 * 60 * 1000);
+      chatMessages = chatMessages.filter(function(msg) {
+        return msg.timestamp > thirtyMinutesAgo;
+      });
+      
+      // Update chat display if panel is open
+      if (document.getElementById('panelTitle').textContent === 'Chat') {
+        renderChatMessages();
+      }
+      
+      // Set timer to clean up this message in 30 minutes
+      if (chatTimer) clearTimeout(chatTimer);
+      chatTimer = setTimeout(function() {
+        var now = new Date();
+        chatMessages = chatMessages.filter(function(msg) {
+          return (now - msg.timestamp) < 30 * 60 * 1000;
+        });
+        if (document.getElementById('panelTitle').textContent === 'Chat') {
+          renderChatMessages();
+        }
+      }, 30 * 60 * 1000);
+    }
+    
+    function renderChatMessages() {
+      var container = document.getElementById('chatMessages');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      chatMessages.forEach(function(msg) {
+        var div = document.createElement('div');
+        div.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(255,204,51,0.1); border-radius: 6px; border-left: 3px solid #ffcc33;';
+        div.textContent = msg.message;
+        container.appendChild(div);
+      });
+      
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    function sendChatMessage() {
+      var input = document.getElementById('chatInput');
+      if (!input || !input.value.trim()) return;
+      
+      addChatMessage(input.value.trim());
+      input.value = '';
+    }
+
     // Panel controls
     function openPanel(title) {
       if (title === 'Welcome') { triggerWelcomeReveal(); return; }
@@ -1072,7 +1134,17 @@
       var titleEl = document.getElementById('panelTitle');
       var contentEl = document.getElementById('panelContent');
       titleEl.textContent = title;
-      contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover About, Shop, Projects, Future, Medical, and Resources.</p>' : ('<p>'+title+' content coming soon…</p>');
+      
+      if (title === 'Chat') {
+        contentEl.innerHTML = '<div id="chatMessages" style="max-height: 40vh; overflow-y: auto; margin-bottom: 12px; border: 1px solid rgba(255,204,51,0.3); border-radius: 6px; padding: 8px; background: rgba(0,0,0,0.3);"></div>' +
+          '<div style="display: flex; gap: 8px;">' +
+          '<input id="chatInput" type="text" placeholder="Enter your message..." style="flex: 1; padding: 8px; background: #1a1a1a; border: 1px solid #ffcc33; color: #fff; border-radius: 4px;" onkeypress="if(event.key===\'Enter\') sendChatMessage();">' +
+          '<button onclick="sendChatMessage()" style="padding: 8px 16px; background: #ffcc33; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Send</button>' +
+          '</div>';
+        renderChatMessages();
+      } else {
+        contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover About, Shop, Projects, Chat, Medical, and Resources.</p>' : ('<p>'+title+' content coming soon…</p>');
+      }
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
     }
