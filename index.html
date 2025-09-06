@@ -584,8 +584,8 @@
     </div>
 
   <!-- Widescreen bars (hidden initially, shown in welcome state) -->
-  <div class="widebar top" style="pointer-events: none; display: none;"><div class="content"></div></div>
-  <div class="widebar bottom" style="pointer-events: none; display: none;"><div class="content"></div></div>
+  <div class="widebar top" style="pointer-events: none;"><div class="content"></div></div>
+  <div class="widebar bottom" style="pointer-events: none;"><div class="content"></div></div>
 
   <!-- Control Buttons (revealed post-Welcome) -->
   <button id="wButton" class="hex-button circle-btn" aria-label="Toggle Welcome state" onclick="handleWButtonClick()" style="left:10%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
@@ -1014,11 +1014,7 @@
           if (b) b.style.display = 'inline-flex';
         });
         
-        // Show widescreen bars
-        var topBar = document.querySelector('.widebar.top');
-        var bottomBar = document.querySelector('.widebar.bottom');
-        if (topBar) topBar.style.display = 'block';
-        if (bottomBar) bottomBar.style.display = 'block';
+        // Widescreen bars are now controlled by CSS animation via show-bars class
         
         // aButton is now handled by the video control system
         
@@ -1038,6 +1034,9 @@
 
       // Hide the background image
       if (bg) { bg.classList.remove('show'); }
+
+      // Remove show-bars class to hide widescreen bars
+      document.body.classList.remove('show-bars');
 
       // Re-enable interactions on the comb
       if (honey) { honey.style.pointerEvents = 'auto'; }
@@ -1059,11 +1058,7 @@
           if (b) b.style.display = 'none';
         });
         
-        // Hide widescreen bars
-        var topBar = document.querySelector('.widebar.top');
-        var bottomBar = document.querySelector('.widebar.bottom');
-        if (topBar) topBar.style.display = 'none';
-        if (bottomBar) bottomBar.style.display = 'none';
+        // Widescreen bars are hidden by removing show-bars class
         
         welcomeRevealed = false;
       }, 100); // Much faster transition
