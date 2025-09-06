@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HempHive • Welcome to the Future of Hemp Innovation</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="HempHive - Discover the future of hemp innovation through interactive experiences, music streaming, and sustainable technology. Explore our honeycomb ecosystem." />
+  <meta name="keywords" content="hemp, innovation, sustainable technology, music streaming, interactive experience, hemp farming, medical hemp, resources" />
+  <meta name="author" content="HempHive" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="HempHive • Welcome to the Future of Hemp Innovation" />
+  <meta property="og:description" content="Discover the future of hemp innovation through interactive experiences, music streaming, and sustainable technology." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://hemphive.farm" />
+  <meta property="og:image" content="https://hemphive.farm/main.png" />
+  <meta property="og:site_name" content="HempHive" />
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HempHive • Welcome to the Future of Hemp Innovation" />
+  <meta name="twitter:description" content="Discover the future of hemp innovation through interactive experiences, music streaming, and sustainable technology." />
+  <meta name="twitter:image" content="https://hemphive.farm/main.png" />
+  
+  <!-- Favicon and Icons -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon.ico" />
+  
+  <!-- Preload Critical Resources -->
+  <link rel="preload" href="main.png" as="image" />
+  <link rel="preload" href="marissa.webm" as="video" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#ffcc33" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="HempHive" />
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "HempHive",
+    "url": "https://hemphive.farm",
+    "logo": "https://hemphive.farm/main.png",
+    "description": "HempHive - Discover the future of hemp innovation through interactive experiences, music streaming, and sustainable technology.",
+    "sameAs": []
+  }
+  </script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      overflow: hidden;
+      background: black;
+      animation: bgFade 3s ease-in-out forwards;
+      /* Performance optimizations */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    @keyframes bgFade {
+      from { opacity: 0.2; }
+      to { opacity: 1; }
+    }
+
+    body {
+      background: #000; /* background handled by SVG honeycomb below */
+
+	opacity: 0.8;
+    }
+
+    /* Glow overlay – reduced intensity */
+    .glow-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 204, 51, 0.04), rgba(0,0,0,0));
+      animation: subtleGlow 30s ease-in-out infinite;
+      pointer-events: none;
+      opacity: 0.6;
+      z-index: 1;
+    }
+
+    /* Background image that reveals on Welcome */
+    .bg-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: url('main.png') center center / contain no-repeat;
+      background-color: #000;
+      z-index: 0;
+      opacity: 0;
+      transform: scale(1);
+      transition: opacity 1.6s ease, transform 3s ease;
+      will-change: opacity, transform;
+    }
+    .bg-image.show { opacity: 1; transform: scale(1.03); }
+
+    @keyframes subtleGlow {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.4; }
+    }
+
+    .center-container {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+
+    .hex {
+      width: 12vw;
+      height: 12vw;
+      max-width: 120px;
+      max-height: 120px;
+      color: white;
+      font-size: 3rem;
+      text-align: center;
+      text-shadow: 0 0 10px #ffcc33, 0 0 20px #ff9900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      clip-path: polygon(
+        25% 5%, 75% 5%, 
+        100% 50%, 75% 95%, 
+        25% 95%, 0% 50%
+      );
+      border: 2px solid #ffcc33;
+      border-radius: 12px;
+      transition: opacity 1s ease-out;
+    }
+
+    .hex.fade-out {
+      opacity: 0;
+    }
+
+    /* Honeycomb canvas (SVG background + interactive buttons overlay) */
+    #honeycomb {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10; /* Above the video buttons */
+    }
+    #honeycombSvg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #honeycombSvg { pointer-events: none; }
+
+    /* Interactive SVG cells */
+    .hex-cell { pointer-events: auto; cursor: pointer; }
+    .hex-cell polygon { transition: stroke 0.2s ease, fill 0.2s ease, filter 0.2s ease; }
+    .hex-cell:focus polygon,
+    .hex-cell:hover polygon { stroke: #ffcc33; filter: drop-shadow(0 0 6px rgba(255,204,51,0.35)); }
+    .cell-label { fill: #ffcc33; font-weight: 700; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
+    .hex-cell:hover .cell-label { opacity: 1; }
+    .hex-cell.music.playing .cell-label { opacity: 0.4; }
+    .hex-cell.music.playing:hover .cell-label { opacity: 1; }
+
+    /* Modal panel */
+    .panel-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .panel {
+      width: min(640px, 90vw);
+      max-height: 80vh;
+      background: #0b0b0b;
+      border: 1px solid #ffcc33;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 30px rgba(255, 204, 51, 0.25);
+      border-radius: 14px;
+      padding: 24px;
+      overflow: auto;
+      color: #eee;
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .panel h2 { margin: 0 0 10px 0; color: #ffda4d; }
+    .panel .close {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      background: transparent;
+      border: 0;
+      color: #ffda4d;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .panel-backdrop.show { opacity: 1; pointer-events: auto; }
+    .panel-backdrop.show .panel { opacity: 0.9; transform: translateY(0) scale(1); }
+
+    /* Widescreen bars (top and bottom) */
+    .widebar {
+      position: fixed;
+      left: 0;
+      width: 100%;
+      height: 64px;
+      background: rgba(12,12,12,0.6);
+      color: #ffda4d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      backdrop-filter: blur(2px);
+    }
+    .widebar.top { top: 0; border-bottom: 1px solid rgba(255,204,51,0.8); }
+    .widebar.bottom { bottom: 0; border-top: 1px solid rgba(255,204,51,0.8); }
+    .widebar .content { width: min(1200px, 92vw); text-align: center; letter-spacing: 0.5px; }
+    @media (max-width: 768px) { .widebar { height: 56px; } }
+
+    /* Slide-in animation for bars after background fades */
+    .widebar { transform: translateY(-100%); opacity: 0; transition: transform 0.6s ease, opacity 0.6s ease; }
+    .widebar.bottom { transform: translateY(100%); }
+    body.show-bars .widebar.top { transform: translateY(0); opacity: 1; }
+    body.show-bars .widebar.bottom { transform: translateY(0); opacity: 1; }
+
+    /* Music cell playing state - Internal purple glow */
+    .hex-cell.music.playing polygon {
+      stroke: #9c27b0; /* Purple stroke */
+      stroke-width: 3;
+      fill: #9c27b0; /* Purple fill for internal glow */
+      fill-opacity: 0.3; /* Semi-transparent purple fill */
+      filter: none; /* Remove external shadows */
+    }
+    
+    /* Internal glow effect for the entire hex cell */
+    .hex-cell.music.playing {
+      filter: none; /* Remove external shadows */
+      background: radial-gradient(circle at center, rgba(156, 39, 176, 0.2), transparent 70%);
+    }
+
+    .hex-button {
+      position: absolute;
+      width: 120px; /* will be overridden inline for perfect alignment */
+      height: 104px; /* w * 0.866 – set inline */
+      background: rgba(0, 0, 0, 0.25);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      clip-path: polygon(
+        25% 5%, 75% 5%, 
+        100% 50%, 75% 95%, 
+        25% 95%, 0% 50%
+      );
+      border: 2px solid rgba(255, 204, 51, 0.35);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
+      transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, opacity 0.25s ease;
+      cursor: pointer;
+      position: relative;
+      text-decoration: none;
+      opacity: 0.9;
+    }
+
+    /* Circle style for primary control buttons */
+    .hex-button.circle-btn {
+      clip-path: none;
+      border-radius: 50%;
+      background-position: center;
+      background-size: contain; /* show full PNG without crop */
+      background-repeat: no-repeat;
+      background-color: transparent;
+      border: 0;
+      box-shadow: none;
+      animation: pngPulse 6s ease-in-out infinite;
+      filter: brightness(1) saturate(1);
+      transition: opacity 0.35s ease, filter 0.25s ease;
+    }
+    .hex-button.circle-btn:hover,
+    .hex-button.circle-btn:focus-visible {
+      border-color: transparent;
+      box-shadow: none;
+      outline: none;
+      filter: brightness(1.06) saturate(1.06);
+    }
+    .hex-button.circle-btn .label { display: none !important; }
+    @keyframes pngPulse {
+      0%, 100% { filter: brightness(1) saturate(1); }
+      50% { filter: brightness(1.05) saturate(1.08); }
+    }
+    body.buttons-dimmed .hex-button.circle-btn { opacity: 0.5; }
+
+    .hex-button .label {
+      opacity: 0;
+      transform: translateY(6px);
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(255, 204, 51, 0.35), 0 0 20px rgba(255, 153, 0, 0.25);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      padding: 0 6px;
+    }
+
+    .hex-button:not(.circle-btn):hover,
+    .hex-button:not(.circle-btn):focus-visible {
+      background: radial-gradient(circle at 50% 50%, rgba(255, 204, 51, 0.25), rgba(0,0,0,0.15));
+      border-color: #ffcc33;
+      box-shadow: 0 0 14px rgba(255, 204, 51, 0.45), 0 0 34px rgba(255, 153, 0, 0.25);
+      outline: none;
+      opacity: 1;
+      z-index: 4;
+    }
+
+    .hex-button:hover .label,
+    .hex-button:focus-visible .label {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Staggered reveal when page loads */
+    .hex-button.reveal { opacity: 1; }
+
+    /* A button (appears after Welcome) */
+    #aButton {
+      position: fixed;
+      left: 50%;
+      top: 82%;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 121px; /* width * 0.866 approx */
+      z-index: 6;
+      display: none;
+      font-size: 28px;
+    }
+    #aButton .label { opacity: 1; transform: none; }
+
+    /* Video overlay */
+    .video-overlay {
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 5; /* keep overlay behind buttons so buttons stay clickable */
+      pointer-events: none; /* default off; enabled when shown */
+    }
+    .video-overlay.show { display: flex; pointer-events: none; }
+    .video-overlay video {
+      max-width: min(920px, 92vw);
+      max-height: min(600px, 76vh);
+      border: none;
+      border-radius: 0;
+      background: transparent; /* keep alpha from video */
+      box-shadow: none;
+      /* Default to normal blending to honor true alpha in WebM */
+      mix-blend-mode: normal;
+      pointer-events: auto;
+    }
+
+    /* Ambient full-bleed video overlay (toggled via right-click on central button) */
+    #ambientVideo {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 110vw; /* extend slightly beyond viewport */
+      height: 110vh;
+      object-fit: cover;
+      opacity: 0.5; /* similar subtle opacity */
+      z-index: 4; /* below buttons and hex UI overlays */
+      pointer-events: none;
+      display: none;
+    }
+
+    /* Direct video styling, independent of overlay, to guarantee transparency */
+    /* Overlay videos (center + four sides) */
+    .overlay-video {
+      position: fixed;
+      top: 62%;
+      transform: translate(-50%, -50%);
+      width: 33vw;
+      height: auto;
+      background: transparent;
+      mix-blend-mode: normal;
+      pointer-events: none;
+      z-index: 4; /* below the buttons */
+      display: none;
+    }
+    /* Positions: two left, center, two right */
+    #vid-bln { left: 20%; }
+    #vid-grn { left: 35%; }
+    #lucky-video { left: 50%; }
+    #vid-red { left: 65%; }
+    #vid-pme { left: 80%; }
+
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+      .hex,
+      .hex-button {
+        width: 16vw;
+        height: 16vw;
+        min-width: 60px;
+        min-height: 60px;
+      }
+
+      .hex-button {
+        height: 13.8vw;
+        min-height: 52px;
+      }
+      
+      .widebar {
+        height: 48px;
+        font-size: 14px;
+      }
+      
+      .panel {
+        width: 95vw;
+        padding: 16px;
+      }
+      
+      .hex {
+        font-size: 2rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .hex,
+      .hex-button {
+        width: 20vw;
+        height: 20vw;
+        min-width: 50px;
+        min-height: 50px;
+      }
+      
+      .hex-button {
+        height: 17.3vw;
+        min-height: 43px;
+      }
+      
+      .widebar {
+        height: 44px;
+        font-size: 12px;
+      }
+      
+      .hex {
+        font-size: 1.5rem;
+      }
+    }
+    
+    /* High DPI display optimizations */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+      .hex-button.circle-btn {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+      }
+    }
+    
+    /* Reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    /* Focus preview overlay */
+    #focusOverlay {
+      position: fixed;
+      inset: 0;
+      background: #000 url('prv.png') center center / contain no-repeat;
+      z-index: 10005;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 300ms ease;
+    }
+    #focusOverlay.show { opacity: 1; visibility: visible; }
+    #focusVideo {
+      height: 70vh; /* 70% of viewport height as requested */
+      width: auto;
+      background: transparent;
+      border: 0;
+      border-radius: 4px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      pointer-events: auto;
+    }
+
+    /* AutoTrader full-window panel */
+    .auto-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10006;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .auto-backdrop.show { opacity: 1; pointer-events: auto; }
+    .auto-panel {
+      width: 96vw;
+      height: 94vh;
+      background: #0b0b0b;
+      border: 1px solid #ffcc33;
+      border-radius: 12px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(255, 204, 51, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .auto-panel iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #111;
+    }
+    /* Auto-fallback removed as requested */
+    .auto-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid #ffcc33;
+      color: #ffda4d;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: filter 0.2s ease;
+      z-index: 1;
+    }
+    .auto-close:hover { filter: brightness(1.2); }
+  </style>
+</head>
+<body>
+
+  <!-- Glow effect -->
+  <div class="glow-overlay" aria-hidden="true"></div>
+
+  <!-- Ambient background video (hidden by default) -->
+  <video id="ambientVideo" preload="metadata" playsinline webkit-playsinline muted loop aria-label="Ambient background video">
+    <source src="output.webm" type="video/webm">
+    <p>Your browser doesn't support video playback.</p>
+  </video>
+
+  <!-- Hidden background hero image (reveals on Welcome) -->
+  <div id="bgMain" class="bg-image" aria-hidden="true" role="img" aria-label="HempHive hero background image"></div>
+
+  <!-- Top emoji -->
+  <div class="center-container">
+    <div class="hex" id="hex" role="img" aria-label="Hemp leaf and bee emoji">🌿🐝</div>
+  </div>
+
+  <!-- Honeycomb grid (SVG background + buttons perfectly aligned) -->
+  <div id="honeycomb" aria-label="HempHive navigation">
+    <svg id="honeycombSvg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+    </div>
+
+  <!-- Widescreen bars (hidden initially, shown in welcome state) -->
+  <div class="widebar top" style="pointer-events: none; display: none;"><div class="content"></div></div>
+  <div class="widebar bottom" style="pointer-events: none; display: none;"><div class="content"></div></div>
+
+  <!-- Control Buttons (revealed post-Welcome) -->
+  <button id="wButton" class="hex-button circle-btn" aria-label="Toggle Welcome state" onclick="handleWButtonClick()" style="left:10%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
+    <span class="label">W</span>
+  </button>
+  <button id="aButton" class="hex-button circle-btn" aria-label="Play marissa video" style="left:50%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:140px;height:121px;">
+    <span class="label">A</span>
+  </button>
+  <button id="oButton" class="hex-button circle-btn" aria-label="Play ambient video" style="left:65%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
+    <span class="label">O</span>
+  </button>
+  <button id="btn-bln" class="hex-button circle-btn" aria-label="Play blue video" style="left:20%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
+    <span class="label">🔵</span>
+  </button>
+  <button id="btn-grn" class="hex-button circle-btn" aria-label="Play green video" style="left:35%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
+    <span class="label">🟢</span>
+  </button>
+  <button id="btn-red" class="hex-button circle-btn" aria-label="Play red video" style="left:65%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
+    <span class="label">🔴</span>
+  </button>
+  <button id="btn-pme" class="hex-button circle-btn" aria-label="Play purple video" style="left:80%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
+    <span class="label">🟣</span>
+  </button>
+
+  <!-- Videos -->
+  <div id="videoOverlay" class="video-overlay" aria-hidden="true">
+    <video id="vid-bln" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+      <source src="bln.webm" type="video/webm">
+    </video>
+    <video id="vid-grn" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+      <source src="grn.webm" type="video/webm">
+    </video>
+    <video id="lucky-video" class="overlay-video" preload="metadata" playsinline webkit-playsinline loop>
+      <source src="marissa.webm" type="video/webm">
+    </video>
+    <video id="vid-red" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+      <source src="red.webm" type="video/webm">
+    </video>
+    <video id="vid-pme" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+      <source src="pme.webm" type="video/webm">
+    </video>
+  </div>
+
+  <!-- Focus preview overlay -->
+  <div id="focusOverlay" aria-hidden="true">
+    <video id="focusVideo" preload="metadata" playsinline webkit-playsinline loop></video>
+  </div>
+
+  <!-- AutoTrader full-window panel -->
+  <div id="autoTraderBackdrop" class="auto-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="auto-panel">
+      <button id="autoClose" class="auto-close" aria-label="Close">✕</button>
+      <iframe id="autoFrame" src="" title="AutoTrader" allow="fullscreen; autoplay; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Optional PNG icon support for circular buttons
+    (function(){
+      function trySetBackground(id, pngName) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var url = pngName;
+        var img = new Image();
+        img.onload = function(){ el.style.backgroundImage = 'url(' + url + ')'; };
+        img.onerror = function(){ el.style.backgroundImage = ''; };
+        img.src = url;
+      }
+      // Map buttons to optional pngs; fallback to labels if not found
+      trySetBackground('btn-bln', 'btn-bln.png');
+      trySetBackground('btn-grn', 'btn-grn.png');
+      trySetBackground('aButton', 'btn-center.png');
+      trySetBackground('btn-red', 'btn-red.png');
+      trySetBackground('btn-pme', 'btn-pme.png');
+    })();
+  </script>
+
+  <!-- Modal panel overlay -->
+  <div id="panelBackdrop" class="panel-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="panel">
+      <button class="close" aria-label="Close" id="panelClose">✕</button>
+      <h2 id="panelTitle"></h2>
+      <div id="panelContent"></div>
+    </div>
+  </div>
+
+  <!-- Interactions -->
+  <script>
+    // Track whether the welcome reveal has been triggered
+    var welcomeRevealed = false;
+    // Background image metrics for positioning media relative to the hero
+    var bgMetrics = { ready: false, left: 0, top: 0, width: 0, height: 0, aspect: 16/9 };
+    
+    // Global error handler
+    window.addEventListener('error', function(e) {
+      // Silent error handling
+    });
+    // Layout config for overlay videos and buttons (tweak here for trial-and-error)
+    var mediaLayout = window.mediaLayout || {
+      sizeMultiplierVideos: 2,
+      sizeMultiplierButtons: 1, // 50% smaller than before (was 2 -> now 1)
+      videos: {
+        'vid-bln': { x: 12, y: 62, w: 20 },
+        'vid-grn': { x: 32, y: 62, w: 20 },
+        'lucky-video': { x: 50, y: 62, w: 22 },
+        'vid-red': { x: 68, y: 62, w: 20 },
+        'vid-pme': { x: 88, y: 62, w: 20 }
+      },
+      buttons: {
+        'btn-bln': { x: 12, y: 86, w: 10 },
+        'btn-grn': { x: 32, y: 86, w: 10 },
+        'aButton': { x: 50, y: 86, w: 12 },
+        'btn-red': { x: 68, y: 86, w: 10 },
+        'btn-pme': { x: 88, y: 86, w: 10 }
+      }
+    };
+    (function initBgAspect(){
+      var img = new Image();
+      img.onload = function(){
+        if (img.naturalWidth && img.naturalHeight) {
+          bgMetrics.aspect = img.naturalWidth / img.naturalHeight;
+          computeBgMetrics();
+          positionMediaElements();
+        }
+      };
+      img.src = 'main.png';
+    })();
+
+    // Fade out the hero emoji after a brief moment
+    setTimeout(() => {
+      var topHex = document.getElementById('hex');
+      if (topHex) { topHex.classList.add('fade-out'); }
+      // Show bars shortly after fade begins
+      document.body.classList.add('show-bars');
+    }, 1500);
+
+    // Generate responsive honeycomb SVG with interactive cells
+    function buildHoneycomb() {
+      var svg = document.getElementById('honeycombSvg');
+      if (!svg) return;
+      if (welcomeRevealed) return; // Skip building once reveal has happened
+
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+
+      // Pointy-top orientation so points meet and rows fit in gaps
+      // Choose target columns across the screen
+      var targetCols = Math.max(7, Math.min(16, Math.round(vw / 130)));
+      // Derive hex dimensions from side length s
+      var w = vw / (targetCols + 0.5);        // width corner-to-corner
+      var s = w / Math.sqrt(3);               // side length (and radius)
+      var h = 2 * s;                          // height corner-to-corner
+      var xStep = w;                           // center spacing horizontally
+      var yStep = 1.5 * s;                     // center spacing vertically (3/4 of height)
+
+      // Compute grid extents with overflow coverage
+      var cols = Math.floor(vw / xStep) + 3;
+      var rows = Math.floor(vh / yStep) + 4;
+
+      // Prepare SVG
+      svg.setAttribute('viewBox', '0 0 ' + vw + ' ' + vh);
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+      // Gradients for honeycomb fill
+      var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      var grad1 = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+      grad1.setAttribute('id', 'cellGlow1');
+      grad1.setAttribute('cx', '50%');
+      grad1.setAttribute('cy', '50%');
+      grad1.setAttribute('r', '70%');
+      var s1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); s1.setAttribute('offset','0%'); s1.setAttribute('stop-color','#1a1a1a');
+      var s2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); s2.setAttribute('offset','100%'); s2.setAttribute('stop-color','#0a0a0a');
+      grad1.appendChild(s1); grad1.appendChild(s2);
+
+      var grad2 = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
+      grad2.setAttribute('id', 'cellGlow2');
+      grad2.setAttribute('cx', '50%');
+      grad2.setAttribute('cy', '50%');
+      grad2.setAttribute('r', '70%');
+      var t1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); t1.setAttribute('offset','0%'); t1.setAttribute('stop-color','#141414');
+      var t2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop'); t2.setAttribute('offset','100%'); t2.setAttribute('stop-color','#050505');
+      grad2.appendChild(t1); grad2.appendChild(t2);
+
+      defs.appendChild(grad1); defs.appendChild(grad2);
+      svg.appendChild(defs);
+
+      function hexPoints(cx, cy) {
+        var p = [
+          [cx, cy - h/2],              // top point
+          [cx + w/2, cy - h/4],        // top-right
+          [cx + w/2, cy + h/4],        // bottom-right
+          [cx, cy + h/2],              // bottom point
+          [cx - w/2, cy + h/4],        // bottom-left
+          [cx - w/2, cy - h/4]         // top-left
+        ];
+        return p.map(function(pt){ return pt[0].toFixed(1)+','+pt[1].toFixed(1); }).join(' ');
+      }
+
+      var y = -h/2;
+      var centerQ = Math.round((vw / xStep) / 2);
+      var centerR = Math.round((vh / yStep) / 2);
+      var centerGroup = null;
+      var neighborGroups = [];
+      for (var r = 0; r < rows; r++) {
+        // For pointy-top, offset alternate rows by half width so points fit between gaps
+        var offsetX = (r % 2 === 0) ? 0 : w / 2;
+        var x = -w/2 + offsetX;
+        for (var c = 0; c < cols; c++) {
+          var cx = x + w/2;
+          var cy = y + h/2;
+          // interactive cell group
+          var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          g.setAttribute('class', 'hex-cell');
+          g.setAttribute('tabindex', '0');
+          g.setAttribute('role', 'button');
+          g.setAttribute('aria-label', 'Cell '+(r+1)+'-'+(c+1));
+
+          var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          poly.setAttribute('points', hexPoints(cx, cy));
+          poly.setAttribute('fill', (r + c) % 2 === 0 ? 'url(#cellGlow1)' : 'url(#cellGlow2)');
+          poly.setAttribute('stroke', 'rgba(255, 204, 51, 0.35)');
+          poly.setAttribute('stroke-width', '1');
+
+          var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          label.setAttribute('class', 'cell-label');
+          label.setAttribute('x', cx);
+          label.setAttribute('y', cy);
+          label.setAttribute('text-anchor', 'middle');
+          label.setAttribute('dominant-baseline', 'central');
+          label.setAttribute('font-size', Math.max(10, Math.floor(w * 0.16)));
+          label.textContent = '';
+
+          g.appendChild(poly);
+          g.appendChild(label);
+
+          g.addEventListener('keydown', function(e){
+            if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); this.dispatchEvent(new Event('click')); }
+          });
+          // Default cells do nothing for now
+          g.addEventListener('click', function(e){});
+
+          svg.appendChild(g);
+          x += xStep;
+        }
+        y += yStep;
+      }
+
+      // Highlight central ring (center + its six neighbors) with brighter gold
+      var groups = Array.prototype.slice.call(svg.querySelectorAll('g.hex-cell'));
+      if (groups.length) {
+        // Compute the visual center by picking the group closest to viewport center
+        var bestIdx = -1, bestDist = Infinity, bestCenter = {cx: vw/2, cy: vh/2};
+        groups.forEach(function(gr, idx){
+          var poly = gr.querySelector('polygon');
+          var pts = poly.getAttribute('points').split(' ').map(function(p){var a=p.split(',');return {x:parseFloat(a[0]), y:parseFloat(a[1])};});
+          var cx = (pts[0].x + pts[3].x) / 2; // average of top and bottom points x -> center x
+          var cy = (pts[0].y + pts[3].y) / 2; // average y
+          var dx = cx - vw/2, dy = cy - vh/2;
+          var d = dx*dx + dy*dy;
+          if (d < bestDist) { bestDist = d; bestIdx = idx; }
+        });
+        if (bestIdx >= 0) {
+          var center = groups[bestIdx];
+          var cpoly = center.querySelector('polygon');
+          cpoly.setAttribute('stroke', '#ffd24d');
+          cpoly.setAttribute('stroke-width', '2');
+
+          // Find 6 nearest neighbors by centroid distance
+          var centroids = groups.map(function(gr){
+            var p = gr.querySelector('polygon').getAttribute('points').split(' ').map(function(pt){var a=pt.split(',');return {x:parseFloat(a[0]), y:parseFloat(a[1])};});
+            return { g: gr, x: (p[0].x + p[3].x)/2, y: (p[0].y + p[3].y)/2 };
+          });
+          var centerCent = centroids[bestIdx];
+          centroids.splice(bestIdx,1);
+          centroids.sort(function(a,b){
+            var da = (a.x-centerCent.x)**2 + (a.y-centerCent.y)**2;
+            var db = (b.x-centerCent.x)**2 + (b.y-centerCent.y)**2;
+            return da - db;
+          });
+          var six = centroids.slice(0,6);
+          six.forEach(function(item){
+            var poly = item.g.querySelector('polygon');
+            poly.setAttribute('stroke', '#ffd24d');
+            poly.setAttribute('stroke-width', '2');
+          });
+
+          // Order neighbors by angle around the center (top first, clockwise)
+          var neighborOrdered = six.slice().sort(function(a,b){
+            function ang(o){ return Math.atan2(o.y - centerCent.y, o.x - centerCent.x); }
+            var A = ang(a), B = ang(b);
+            // rotate so that -90deg (top) is 0
+            var toStart = function(t){ var v = t + Math.PI/2; return v < -Math.PI ? v + 2*Math.PI : (v > Math.PI ? v - 2*Math.PI : v); };
+            A = toStart(A); B = toStart(B);
+            return A - B;
+          });
+
+          // Preserve ring labels (clockwise from top); no Music in the ring
+          var ringLabels = window.__ringLabels || ['About','Shop','Projects','Future','Medical','Resources'];
+          window.__ringLabels = ringLabels.slice();
+
+          // Apply labels to the six neighbors
+          var labelToGroup = {};
+          neighborOrdered.forEach(function(obj, idx){
+            var name = ringLabels[idx] || 'Info';
+            var gr = obj.g;
+            gr.addEventListener('click', function(){ openPanel(name); });
+            gr.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel(name); }});
+            var t = gr.querySelector('text'); if (t) { t.textContent = name; }
+            labelToGroup[name] = gr;
+          });
+
+          // Center mapping - open Welcome panel
+          center.addEventListener('click', function(e){ 
+            e.preventDefault();
+            e.stopPropagation();
+            openPanel('Welcome');
+          });
+          center.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel('Welcome'); }});
+          var ct = center.querySelector('text'); if (ct) { ct.textContent = 'Welcome'; }
+
+          // MUSIC: select the hex one row above the top neighbor (two steps above center)
+          var targetX = centerCent.x;
+          var targetY = centerCent.y - 2 * yStep;
+          var candidates = centroids.slice(6); // exclude the 6-ring cells we already used
+          var best = null; var bestD = Infinity;
+          candidates.forEach(function(o){
+            var dx = o.x - targetX; var dy = o.y - targetY; var d = dx*dx + dy*dy;
+            if (d < bestD) { bestD = d; best = o; }
+          });
+          if (best && best.g) {
+            var music = best.g; music.classList.add('music');
+            music.addEventListener('click', function(){ openMusicPanel(); });
+            music.addEventListener('contextmenu', function(e){ e.preventDefault(); toggleMusic(); });
+            music.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openMusicPanel(); }});
+            var mt = music.querySelector('text'); if (mt) { mt.textContent = 'Music'; }
+          }
+
+          // Add an extra labeled hex for AutoTrader below Resources and About
+          try {
+            var resGr = labelToGroup['Resources'];
+            var aboutGr = labelToGroup['About'];
+            if (resGr && aboutGr) {
+              function centroidOf(g){
+                var p = g.querySelector('polygon').getAttribute('points').split(' ').map(function(pt){ var a = pt.split(','); return {x:parseFloat(a[0]), y:parseFloat(a[1])}; });
+                return { x: (p[0].x + p[3].x)/2, y: (p[0].y + p[3].y)/2 };
+              }
+              var cA = centroidOf(aboutGr);
+              var cR = centroidOf(resGr);
+              var targetX = (cA.x + cR.x) / 2;
+              var targetY = (cA.y + cR.y) / 2 + yStep; // a bit below midpoint
+              var used = new Set([aboutGr, resGr, center].map(function(g){return g;}));
+              neighborOrdered.forEach(function(o){ used.add(o.g); });
+              var bestAuto = null, bestAutoD = Infinity;
+              centroids.forEach(function(entry){
+                if (used.has(entry.g)) return;
+                var dx = entry.x - targetX, dy = entry.y - targetY;
+                var d = dx*dx + dy*dy;
+                if (d < bestAutoD) { bestAutoD = d; bestAuto = entry.g; }
+              });
+              if (bestAuto) {
+                var polyAuto = bestAuto.querySelector('polygon');
+                polyAuto.setAttribute('stroke', '#ffd24d');
+                polyAuto.setAttribute('stroke-width', '2');
+                var tAuto = bestAuto.querySelector('text'); if (tAuto) { tAuto.textContent = 'AutoTrader'; }
+                bestAuto.addEventListener('click', function(){ openPanel('AutoTrader'); });
+                bestAuto.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel('AutoTrader'); }});
+              }
+            }
+          } catch(_e) {}
+        }
+      }
+    }
+
+    var resizeTimer;
+    window.addEventListener('resize', function(){
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function(){ buildHoneycomb(); computeBgMetrics(); positionMediaElements(); }, 120);
+    });
+    window.addEventListener('orientationchange', function(){
+      setTimeout(function(){ buildHoneycomb(); computeBgMetrics(); positionMediaElements(); }, 200);
+    });
+    document.addEventListener('DOMContentLoaded', function(){ buildHoneycomb(); computeBgMetrics(); positionMediaElements(); });
+
+    // Trigger reveal animation: split hex grid and show background
+    function triggerWelcomeReveal() {
+      if (welcomeRevealed) return;
+      welcomeRevealed = true;
+
+      var svg = document.getElementById('honeycombSvg');
+      var honey = document.getElementById('honeycomb');
+      var bg = document.getElementById('bgMain');
+      if (!svg) return;
+
+      // Show the background image with fade + slow zoom
+      if (bg) { bg.classList.add('show'); }
+
+      // Disable interactions on the comb
+      if (honey) { honey.style.pointerEvents = 'none'; }
+
+      var groups = Array.prototype.slice.call(svg.querySelectorAll('g.hex-cell'));
+      var centerX = (window.innerWidth || document.documentElement.clientWidth) / 2;
+      var shift = Math.round((window.innerWidth || document.documentElement.clientWidth) * 0.65); // almost out of view
+
+      groups.forEach(function(g){
+        try {
+          var bbox = g.getBBox();
+          var cx = bbox.x + bbox.width / 2;
+          var dir = cx < centerX ? -1 : 1;
+          g.style.transition = 'transform 1.8s ease-in-out, opacity 1.8s ease-in-out';
+          g.style.transform = 'translateX(' + (dir * shift) + 'px)';
+          g.style.opacity = '0.2';
+        } catch(e) {
+          // fallback: move right side by default if bbox fails
+          g.style.transition = 'transform 1.8s ease-in-out, opacity 1.8s ease-in-out';
+          g.style.transform = 'translateX(' + shift + 'px)';
+          g.style.opacity = '0.2';
+        }
+      });
+
+      // Optional: after animation, keep SVG lightweight
+      setTimeout(function(){
+        try { svg.style.filter = 'blur(1px)'; } catch(e){}
+        // Reveal control buttons
+        ;['wButton','aButton','oButton','btn-bln','btn-grn','btn-red','btn-pme'].forEach(function(id){
+          var b = document.getElementById(id);
+          if (b) b.style.display = 'inline-flex';
+        });
+        
+        // Show widescreen bars
+        var topBar = document.querySelector('.widebar.top');
+        var bottomBar = document.querySelector('.widebar.bottom');
+        if (topBar) topBar.style.display = 'block';
+        if (bottomBar) bottomBar.style.display = 'block';
+        
+        // aButton is now handled by the video control system
+        
+        // start inactivity tracker for circle buttons once revealed
+        try { startButtonsInactivityTracker(); } catch(_e){}
+      }, 1900);
+    }
+    
+    // Return to main screen: reverse the welcome reveal
+    function returnToMainScreen() {
+      if (!welcomeRevealed) return;
+      
+      var svg = document.getElementById('honeycombSvg');
+      var honey = document.getElementById('honeycomb');
+      var bg = document.getElementById('bgMain');
+      if (!svg) return;
+
+      // Hide the background image
+      if (bg) { bg.classList.remove('show'); }
+
+      // Re-enable interactions on the comb
+      if (honey) { honey.style.pointerEvents = 'auto'; }
+
+      var groups = Array.prototype.slice.call(svg.querySelectorAll('g.hex-cell'));
+
+      groups.forEach(function(g){
+        g.style.transition = 'transform 1.8s ease-in-out, opacity 1.8s ease-in-out';
+        g.style.transform = 'translateX(0px)';
+        g.style.opacity = '1';
+      });
+
+      // Hide control buttons and reset SVG blur
+      setTimeout(function(){
+        try { svg.style.filter = 'none'; } catch(e){}
+        // Hide control buttons immediately when returning to main screen
+        ;['wButton','aButton','oButton','btn-bln','btn-grn','btn-red','btn-pme'].forEach(function(id){
+          var b = document.getElementById(id);
+          if (b) b.style.display = 'none';
+        });
+        
+        // Hide widescreen bars
+        var topBar = document.querySelector('.widebar.top');
+        var bottomBar = document.querySelector('.widebar.bottom');
+        if (topBar) topBar.style.display = 'none';
+        if (bottomBar) bottomBar.style.display = 'none';
+        
+        welcomeRevealed = false;
+      }, 100); // Much faster transition
+    }
+
+    // Panel controls
+    function openPanel(title) {
+      if (title === 'Welcome') { triggerWelcomeReveal(); return; }
+      if (title === 'AutoTrader') { openAutoTraderPanel(); return; }
+      var backdrop = document.getElementById('panelBackdrop');
+      var titleEl = document.getElementById('panelTitle');
+      var contentEl = document.getElementById('panelContent');
+      titleEl.textContent = title;
+      contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover About, Shop, Projects, Future, Medical, and Resources.</p>' : ('<p>'+title+' content coming soon…</p>');
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+    }
+    function closePanel() {
+      var backdrop = document.getElementById('panelBackdrop');
+      backdrop.classList.remove('show');
+      backdrop.setAttribute('aria-hidden','true');
+    }
+    document.getElementById('panelClose').addEventListener('click', closePanel);
+    document.getElementById('panelBackdrop').addEventListener('click', function(e){ if (e.target.id === 'panelBackdrop') closePanel(); });
+    window.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePanel(); });
+
+    // AutoTrader controls
+    function openAutoTraderPanel() {
+      console.log('Opening AutoTrader panel...');
+      // Ensure other overlays don't obscure
+      var focus = document.getElementById('focusOverlay');
+      if (focus) { focus.classList.remove('show'); focus.setAttribute('aria-hidden','true'); }
+      var stdPanel = document.getElementById('panelBackdrop');
+      if (stdPanel) { stdPanel.classList.remove('show'); stdPanel.setAttribute('aria-hidden','true'); }
+      var backdrop = document.getElementById('autoTraderBackdrop');
+      var frame = document.getElementById('autoFrame');
+      if (frame) {
+        try { frame.removeAttribute('src'); } catch(_e){}
+        // Set src every time in case of prior failures
+        frame.src = 'https://hemphive.github.io/ATB2/';
+      }
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+      console.log('AutoTrader panel opened');
+    }
+    function closeAutoTraderPanel() {
+      console.log('Closing AutoTrader panel...');
+      var backdrop = document.getElementById('autoTraderBackdrop');
+      backdrop.classList.remove('show');
+      backdrop.setAttribute('aria-hidden','true');
+      console.log('AutoTrader panel closed');
+    }
+    (function(){
+      var ac = document.getElementById('autoClose');
+      var ab = document.getElementById('autoTraderBackdrop');
+      if (ac) ac.addEventListener('click', closeAutoTraderPanel);
+      if (ab) ab.addEventListener('click', function(e){ if (e.target.id === 'autoTraderBackdrop') closeAutoTraderPanel(); });
+      window.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAutoTraderPanel(); });
+    })();
+
+    // Music panel & player
+    var radioList = [];
+    var currentIdx = -1;
+    var audio = new Audio();
+    audio.crossOrigin = 'anonymous';
+
+    function openMusicPanel() {
+      console.log('Opening music panel...');
+      var backdrop = document.getElementById('panelBackdrop');
+      var titleEl = document.getElementById('panelTitle');
+      var contentEl = document.getElementById('panelContent');
+      titleEl.textContent = 'Music';
+      contentEl.innerHTML = '<div id="nowPlaying" style="margin-bottom:10px;color:#ffda4d;">Not playing</div>'+
+        '<div id="stations" style="max-height:40vh;overflow:auto;margin-bottom:12px;">Stations</div>'+
+        '<div style="display:flex;gap:10px;justify-content:center;">'+
+        '<button id="btnPrev" class="ui-btn">⏮ Prev</button>'+ 
+        '<button id="btnPlay" class="ui-btn">▶️ Play</button>'+ 
+        '<button id="btnNext" class="ui-btn">⏭ Next</button>'+ 
+        '</div>'+
+        '<style>.ui-btn{background:#151515;border:1px solid #ffcc33;color:#ffda4d;padding:8px 14px;border-radius:8px;cursor:pointer;transition:filter 0.2s ease;} .ui-btn:hover{filter:brightness(1.2);} .station{padding:8px;border:1px solid rgba(255,204,51,0.25);margin:6px 0;border-radius:8px;cursor:pointer;background:rgba(255,204,51,0.04);} .station:hover{background:rgba(255,204,51,0.08);} .station.active{border-color:#ffd24d;background:rgba(255,230,120,0.12);box-shadow:0 0 0 2px rgba(255,220,120,0.08) inset;}</style>';
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+      
+      console.log('Radio list length:', radioList.length);
+      if (!radioList.length) { 
+        console.log('Fetching stations...');
+        fetchStations(); 
+      } else { 
+        console.log('Rendering existing stations...');
+        renderStations(); 
+      }
+      
+      document.getElementById('btnPrev').onclick = function(){ changeStation(-1); };
+      document.getElementById('btnPlay').onclick = function(){ toggleMusic(); };
+      document.getElementById('btnNext').onclick = function(){ changeStation(1); };
+    }
+
+    function fetchStations() {
+      console.log('Fetching radio stations...');
+      // Try multiple paths to find radio.txt
+      var paths = ['radio.txt', './radio.txt', '/radio.txt'];
+      var currentPathIndex = 0;
+      
+      function tryNextPath() {
+        if (currentPathIndex >= paths.length) {
+          console.error('Failed to load radio.txt from any path, using fallback stations');
+          // Fallback stations in case radio.txt can't be loaded
+          radioList = [
+            { name: 'House FM', url: 'https://streaming.broadcast.radio/housefm' },
+            { name: 'BIGfm House', url: 'https://stream.bigfm.de/deeptechhouse/mp3-128/' },
+            { name: 'Reggae Dancehall', url: 'https://stream.bigfm.de/dancehall/mp3-128/' },
+            { name: 'Techno Lovers', url: 'https://stream.technolovers.fm/vocal-trance' },
+            { name: 'Electro FM', url: 'https://electro-fm.stream.laut.fm/electro-fm' }
+          ];
+          console.log('Using fallback stations:', radioList.length);
+          if (currentIdx === -1 && radioList.length) currentIdx = 0;
+          renderStations();
+          return;
+        }
+        
+        var path = paths[currentPathIndex];
+        console.log('Trying path:', path);
+        
+        fetch(path, { 
+          cache: 'no-cache',
+          mode: 'cors'
+        }).then(function(r){
+          console.log('Response status:', r.status, 'for path:', path);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        }).then(function(text){
+          console.log('Received text length:', text.length);
+          // Guard: some servers return index.html when file missing
+          var header = text.slice(0, 32).toLowerCase();
+          if (header.includes('<!doctype') || header.includes('<html')) {
+            console.warn('radio.txt fetch returned HTML; trying next path.');
+            currentPathIndex++;
+            tryNextPath();
+            return;
+          }
+          console.log('Successfully loaded radio.txt from:', path);
+          radioList = parseStations(text);
+          console.log('Parsed stations:', radioList.length);
+          if (currentIdx === -1 && radioList.length) currentIdx = 0;
+          renderStations();
+        }).catch(function(err){
+          console.warn('Failed to load from', path, ':', err.message);
+          currentPathIndex++;
+          tryNextPath();
+        });
+      }
+      
+      tryNextPath();
+    }
+
+    function parseStations(text) {
+      var lines = text.replace(/\r/g,'').split('\n');
+      var entries = [];
+      // Collapse comments and blank lines
+      var tokens = [];
+      for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i].trim();
+        if (!ln || ln.startsWith('#')) continue;
+        tokens.push(ln);
+      }
+      function isUrl(s){ return /:\/\//.test(s); }
+      function nameFromUrl(u){ try { var d = new URL(u).hostname.replace(/^www\./,''); return d; } catch(e){ return 'Station'; } }
+      for (var j = 0; j < tokens.length; j++) {
+        var t = tokens[j];
+        // Support Name|URL on one line
+        if (t.includes('|')) {
+          var parts = t.split('|');
+          var nm = (parts[0] || '').trim();
+          var url = (parts[1] || '').trim();
+          if (isUrl(url)) entries.push({ name: nm || nameFromUrl(url), url: url });
+          continue;
+        }
+        if (isUrl(t)) {
+          entries.push({ name: nameFromUrl(t), url: t });
+        } else if (j + 1 < tokens.length && isUrl(tokens[j+1])) {
+          entries.push({ name: t, url: tokens[j+1] });
+          j++; // consume url line
+        }
+      }
+      return entries;
+    }
+
+    function renderStations() {
+      console.log('Rendering stations, count:', radioList.length);
+      var container = document.getElementById('stations');
+      if (!container) {
+        console.error('Stations container not found!');
+        return;
+      }
+      container.innerHTML = '';
+      
+      if (radioList.length === 0) {
+        container.innerHTML = '<div style="color:#ffda4d;text-align:center;padding:20px;">No stations loaded. Check console for errors.</div>';
+        return;
+      }
+      
+      radioList.forEach(function(st, idx){
+        var div = document.createElement('div');
+        div.className = 'station'+(idx===currentIdx?' active':'');
+        div.textContent = st.name;
+        div.onclick = function(){ selectStation(idx, true); };
+        div.oncontextmenu = function(e){ e.preventDefault(); toggleMusic(); };
+        container.appendChild(div);
+      });
+      updateNowPlaying();
+    }
+
+    function selectStation(idx, autoplay) {
+      currentIdx = idx;
+      renderStations();
+      if (autoplay) { playCurrent(); }
+      // Update selection visual immediately
+      var container = document.getElementById('stations');
+      if (container) {
+        Array.prototype.forEach.call(container.querySelectorAll('.station'), function(el, i){
+          if (i === currentIdx) el.classList.add('active'); else el.classList.remove('active');
+        });
+      }
+    }
+
+    function playCurrent() {
+      if (currentIdx < 0 || !radioList[currentIdx]) return;
+      try { audio.pause(); } catch(e){}
+      audio.src = '';
+      audio.load();
+      audio.src = radioList[currentIdx].url;
+      
+      // Add error handling for audio
+      audio.addEventListener('error', function() {
+        setMusicPlaying(false);
+      });
+      
+      audio.play().then(function(){ 
+        setMusicPlaying(true); 
+      }).catch(function(err){ 
+        setMusicPlaying(false);
+      });
+      updateNowPlaying();
+    }
+    function stopMusic() { audio.pause(); setMusicPlaying(false); }
+    function toggleMusic() { if (audio.paused) playCurrent(); else stopMusic(); }
+    function changeStation(dir) {
+      if (!radioList.length) return;
+      currentIdx = (currentIdx + dir + radioList.length) % radioList.length;
+      renderStations();
+      playCurrent();
+    }
+    function updateNowPlaying() {
+      var np = document.getElementById('nowPlaying');
+      if (!np) return;
+      if (currentIdx >= 0 && radioList[currentIdx]) { np.textContent = 'Playing: '+radioList[currentIdx].name; }
+      else { np.textContent = 'Not playing'; }
+    }
+
+    function setMusicPlaying(isPlaying) {
+      var cell = document.querySelector('.hex-cell.music');
+      if (!cell) return;
+      if (isPlaying) {
+        cell.classList.add('playing');
+      } else {
+        cell.classList.remove('playing');
+      }
+    }
+
+    // aButton is now handled by the video control system
+    
+    // Function to toggle AutoTrader panel
+    function toggleAutoTraderPanel() {
+      var autoBackdrop = document.getElementById('autoTraderBackdrop');
+      if (autoBackdrop && autoBackdrop.classList.contains('show')) {
+        closeAutoTraderPanel();
+      } else {
+        openAutoTraderPanel();
+      }
+    }
+    
+    function handleWButtonClick() {
+      if (welcomeRevealed) {
+        returnToMainScreen();
+      } else {
+        triggerWelcomeReveal();
+      }
+    }
+
+    // Restore the original working keyboard handler and add A/W keys
+    window.addEventListener('keydown', function(e){
+      // Only handle actual keyboard events, not click events
+      if (e.type !== 'keydown') return;
+      
+      // A key - AutoTrader panel toggle
+      if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        toggleAutoTraderPanel();
+        return;
+      }
+      
+      // W key - Welcome state toggle
+      if (e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        handleWButtonClick();
+        return;
+      }
+      
+      // T key - AutoTrader panel toggle
+      if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        toggleAutoTraderPanel();
+        return;
+      }
+      
+      // O key - Ambient video toggle
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        // Use the video control system
+        var oButton = document.getElementById('oButton');
+        if (oButton) {
+          oButton.click();
+        }
+        return;
+      }
+      
+      
+      // M key - Music panel toggle (restore original working code)
+      if (e.key === 'm' || e.key === 'M') {
+        var backdrop = document.getElementById('panelBackdrop');
+        var titleEl = document.getElementById('panelTitle');
+        if (backdrop && backdrop.classList.contains('show') && titleEl && titleEl.textContent === 'Music') {
+          closePanel();
+        } else {
+          openMusicPanel();
+        }
+        return;
+      }
+      
+      // ESC key handling - priority order: close focus mode first, then videos, then modals, then return to main screen
+      if (e.key === 'Escape') {
+        // First check if focus mode is active
+        if (focusActive) {
+          exitFocusMode();
+          return;
+        }
+        
+        // Then check if any videos are playing
+        var videoOverlay = document.getElementById('videoOverlay');
+        var ambientVideo = document.getElementById('ambientVideo');
+        var anyVideosPlaying = false;
+        
+        if (videoOverlay && videoOverlay.classList.contains('show')) {
+          anyVideosPlaying = true;
+        }
+        if (ambientVideo && ambientVideo.style.display === 'block') {
+          anyVideosPlaying = true;
+        }
+        
+        if (anyVideosPlaying) {
+          // Close all overlay videos
+          var config = [
+            { id: 'vid-bln' }, { id: 'vid-grn' }, { id: 'lucky-video' }, 
+            { id: 'vid-red' }, { id: 'vid-pme' }
+          ];
+          config.forEach(function(item){ 
+            var v = document.getElementById(item.id); 
+            if (!v) return; 
+            try { v.pause(); } catch(err){} 
+            v.style.display = 'none'; 
+            v.muted = true; 
+          });
+          
+          // Close ambient video (output.webm)
+          if (ambientVideo) {
+            try { ambientVideo.pause(); } catch(err){}
+            ambientVideo.style.display = 'none';
+          }
+          
+          if (videoOverlay) { 
+            videoOverlay.classList.remove('show'); 
+            videoOverlay.setAttribute('aria-hidden','true'); 
+          }
+          return;
+        }
+        
+        // Then check if any modals are open
+        var panelBackdrop = document.getElementById('panelBackdrop');
+        var autoBackdrop = document.getElementById('autoTraderBackdrop');
+        
+        if (panelBackdrop && panelBackdrop.classList.contains('show')) {
+          closePanel();
+          return;
+        }
+        if (autoBackdrop && autoBackdrop.classList.contains('show')) {
+          closeAutoTraderPanel();
+          return;
+        }
+        
+        // If no modals are open and we're in welcome state, return to main screen
+        if (welcomeRevealed) {
+          returnToMainScreen();
+          return;
+        }
+      }
+      
+      // M key toggles the Music panel open/close
+      if (e.key === 'm' || e.key === 'M') {
+        var backdrop = document.getElementById('panelBackdrop');
+        var titleEl = document.getElementById('panelTitle');
+        if (backdrop && backdrop.classList.contains('show') && titleEl && titleEl.textContent === 'Music') {
+          closePanel();
+        } else {
+          openMusicPanel();
+        }
+      }
+      
+      // Space/Enter on focused hex cells
+      if (e.key === ' ' || e.key === 'Enter') {
+        var focused = document.activeElement;
+        if (focused && focused.classList.contains('hex-cell')) {
+          e.preventDefault();
+          focused.click();
+        }
+      }
+      
+      // Arrow key navigation for hex cells
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        var focused = document.activeElement;
+        if (focused && focused.classList.contains('hex-cell')) {
+          e.preventDefault();
+          navigateHexGrid(focused, e.key);
+        }
+      }
+    });
+    
+    // All keyboard handling is now in the main window.addEventListener above
+    
+    // Hex grid navigation helper
+    function navigateHexGrid(currentElement, direction) {
+      var allCells = Array.from(document.querySelectorAll('.hex-cell'));
+      var currentIndex = allCells.indexOf(currentElement);
+      var targetIndex = currentIndex;
+      
+      switch(direction) {
+        case 'ArrowUp':
+          targetIndex = Math.max(0, currentIndex - 7); // Approximate row navigation
+          break;
+        case 'ArrowDown':
+          targetIndex = Math.min(allCells.length - 1, currentIndex + 7);
+          break;
+        case 'ArrowLeft':
+          targetIndex = Math.max(0, currentIndex - 1);
+          break;
+        case 'ArrowRight':
+          targetIndex = Math.min(allCells.length - 1, currentIndex + 1);
+          break;
+      }
+      
+      if (targetIndex !== currentIndex && allCells[targetIndex]) {
+        allCells[targetIndex].focus();
+      }
+    }
+
+    // Video controls - simplified without popout functionality
+    (function(){
+      var overlay = document.getElementById('videoOverlay');
+      var config = [
+        { id: 'vid-bln', btn: 'btn-bln' },
+        { id: 'vid-grn', btn: 'btn-grn' },
+        { id: 'vid-red', btn: 'btn-red' },
+        { id: 'vid-pme', btn: 'btn-pme' },
+        { id: 'lucky-video', btn: 'aButton' },
+        { id: 'ambientVideo', btn: 'oButton' }
+      ];
+      function toggleVideo(targetId) {
+        if (!welcomeRevealed) return;
+        var v = document.getElementById(targetId);
+        if (!v) return;
+        var turningOn = v.style.display !== 'block';
+        
+        if (targetId === 'ambientVideo') {
+          // Special handling for ambient video - no overlay needed
+          if (turningOn) {
+            v.style.display = 'block';
+            try { v.play(); } catch(e){}
+          } else {
+            try { v.pause(); } catch(e){}
+            v.style.display = 'none';
+          }
+        } else {
+          // Regular video handling
+          if (turningOn) {
+            if (overlay) { overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false'); }
+            // Show and play this one
+            v.style.display = 'block';
+            try { v.play(); } catch(e){}
+            try { v.muted = false; v.volume = 1.0; } catch(e){}
+            // Keep others visible if they are already on, but mute them
+            config.forEach(function(item){
+              var o = document.getElementById(item.id);
+              if (!o || o === v) return;
+              o.muted = true;
+              if (o.style.display === 'block') { try { o.play(); } catch(_e){} }
+            });
+          } else {
+            try { v.pause(); } catch(e){}
+            v.style.display = 'none';
+            // Keep overlay if any other video is still visible
+            var anyVisible = config.some(function(item){ var el = document.getElementById(item.id); return el && el.style.display === 'block'; });
+            if (!anyVisible && overlay) { overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
+          }
+        }
+      }
+      // Wire buttons
+      config.forEach(function(item){
+        var btn = document.getElementById(item.btn);
+        if (!btn) return;
+        btn.addEventListener('click', function(){ toggleVideo(item.id); });
+      });
+      
+      // Add click handlers to videos for focus mode
+      config.forEach(function(item){
+        var v = document.getElementById(item.id);
+        if (!v) return;
+        v.addEventListener('click', function(){ enterFocusMode(item.id); });
+      });
+      
+      // Direct button event handlers - moved to global scope
+      // ESC handling is now managed by the main keyboard handler
+      // But we also need to handle ambient video in the video controls
+      function closeAllVideos() {
+        config.forEach(function(item){ 
+          var v = document.getElementById(item.id); 
+          if (!v) return; 
+          try { v.pause(); } catch(err){} 
+          v.style.display = 'none'; 
+          v.muted = true; 
+        });
+        
+        // Also close ambient video
+        var ambientVideo = document.getElementById('ambientVideo');
+        if (ambientVideo) {
+          try { ambientVideo.pause(); } catch(err){}
+          ambientVideo.style.display = 'none';
+        }
+        
+        if (overlay) { 
+          overlay.classList.remove('show'); 
+          overlay.setAttribute('aria-hidden','true'); 
+        }
+      }
+    })();
+
+    // Focus preview logic - click on videos to enter focus mode
+    var focusActive = false;
+    var prevOverlayState = { visibleIds: [] };
+    function enterFocusMode(targetId) {
+      if (focusActive) return;
+      focusActive = true;
+      
+      // Store current state of visible videos
+      var overlay = document.getElementById('videoOverlay');
+      var ids = ['vid-bln','vid-grn','lucky-video','vid-red','vid-pme'];
+      prevOverlayState.visibleIds = ids.filter(function(id){ 
+        var v = document.getElementById(id); 
+        return v && v.style.display === 'block'; 
+      });
+      
+      // Hide and pause all overlay videos to prevent overlap
+      ids.forEach(function(id){ 
+        var v = document.getElementById(id); 
+        if (!v) return; 
+        try { v.pause(); } catch(e){} 
+        v.style.display = 'none'; 
+      });
+      
+      if (overlay) { 
+        overlay.classList.remove('show'); 
+        overlay.setAttribute('aria-hidden','true'); 
+      }
+      
+      // Determine source from clicked video element
+      var clicked = document.getElementById(targetId);
+      var src = '';
+      if (clicked) {
+        var s = clicked.querySelector('source');
+        src = s ? s.getAttribute('src') : (clicked.currentSrc || clicked.src || '');
+      }
+      
+      var f = document.getElementById('focusVideo');
+      if (f) {
+        try { f.pause(); } catch(_e){}
+        f.src = '';
+        f.load();
+        if (src) f.src = src;
+        f.muted = false;
+        try { f.play(); } catch(_e){}
+      }
+      
+      var layer = document.getElementById('focusOverlay');
+      if (layer) { 
+        layer.classList.add('show'); 
+        layer.setAttribute('aria-hidden','false'); 
+      }
+    }
+    
+    function exitFocusMode() {
+      if (!focusActive) return;
+      focusActive = false;
+      
+      var f = document.getElementById('focusVideo');
+      if (f) { 
+        try { f.pause(); } catch(_e){} 
+        f.src=''; 
+      }
+      
+      var layer = document.getElementById('focusOverlay');
+      if (layer) { 
+        layer.classList.remove('show'); 
+        layer.setAttribute('aria-hidden','true'); 
+      }
+      
+      // Restore previously visible overlay videos
+      var overlay = document.getElementById('videoOverlay');
+      if (overlay && prevOverlayState.visibleIds && prevOverlayState.visibleIds.length) {
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden','false');
+      }
+      
+      (prevOverlayState.visibleIds || []).forEach(function(id){
+        var v = document.getElementById(id);
+        if (v) { 
+          v.style.display = 'block'; 
+          try { v.play(); } catch(_e){} 
+        }
+      });
+      prevOverlayState.visibleIds = [];
+    }
+
+    // Inactivity fade for circle buttons
+    var __buttonsInactivity = { timer: null, initialized: false, delayMs: 7000 };
+    function startButtonsInactivityTracker() {
+      if (__buttonsInactivity.initialized) return;
+      __buttonsInactivity.initialized = true;
+      var events = ['mousemove','mousedown','touchstart','keydown','wheel'];
+      events.forEach(function(evt){ window.addEventListener(evt, resetButtonsInactivityTimer, { passive: true }); });
+      resetButtonsInactivityTimer();
+    }
+    function resetButtonsInactivityTimer() {
+      try { document.body.classList.remove('buttons-dimmed'); } catch(_e){}
+      if (__buttonsInactivity.timer) { clearTimeout(__buttonsInactivity.timer); }
+      __buttonsInactivity.timer = setTimeout(function(){ try { document.body.classList.add('buttons-dimmed'); } catch(_e){} }, __buttonsInactivity.delayMs);
+    }
+
+    // Compute hero background displayed rect for relative positioning
+    function computeBgMetrics() {
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var aspect = bgMetrics.aspect || (16/9);
+      var viewportAspect = vw / vh;
+      var width, height, left, top;
+      if (viewportAspect > aspect) {
+        // viewport wider than image -> image height fills
+        height = vh;
+        width = height * aspect;
+      } else {
+        // viewport taller than image -> image width fills
+        width = vw;
+        height = width / aspect;
+      }
+      left = (vw - width) / 2;
+      top = (vh - height) / 2;
+      bgMetrics.left = left;
+      bgMetrics.top = top;
+      bgMetrics.width = width;
+      bgMetrics.height = height;
+      bgMetrics.ready = true;
+    }
+
+    // Position overlay videos and related buttons relative to background image
+    function positionMediaElements() {
+      if (!bgMetrics.ready) return;
+      var defsVideo = mediaLayout.videos || {};
+      Object.keys(defsVideo).forEach(function(id){
+        var base = defsVideo[id];
+        var d = { x: base.x, y: base.y, w: (base.w * (mediaLayout.sizeMultiplierVideos || 1)) };
+        var el = document.getElementById(id);
+        if (!el) return;
+        var pxLeft = bgMetrics.left + (d.x/100) * bgMetrics.width;
+        var pxTop = bgMetrics.top + (d.y/100) * bgMetrics.height;
+        el.style.left = pxLeft + 'px';
+        el.style.top = pxTop + 'px';
+        el.style.width = (d.w/100 * bgMetrics.width) + 'px';
+        el.style.height = 'auto';
+        el.style.transform = 'translate(-50%, -50%)';
+      });
+      var defsBtn = mediaLayout.buttons || {};
+      Object.keys(defsBtn).forEach(function(id){
+        var base = defsBtn[id];
+        var d = { x: base.x, y: base.y, w: (base.w * (mediaLayout.sizeMultiplierButtons || 1)) };
+        var el = document.getElementById(id);
+        if (!el) return;
+        var pxLeft = bgMetrics.left + (d.x/100) * bgMetrics.width;
+        var pxTop = bgMetrics.top + (d.y/100) * bgMetrics.height;
+        el.style.left = pxLeft + 'px';
+        el.style.top = pxTop + 'px';
+        var w = (d.w/100 * bgMetrics.width);
+        el.style.width = w + 'px';
+        el.style.height = w + 'px';
+        el.style.transform = 'translate(-50%, -50%)';
+        el.style.zIndex = '6';
+      });
+    }
+    
+    // Register Service Worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js')
+          .then(function(registration) {
+            console.log('HempHive: ServiceWorker registration successful');
+          })
+          .catch(function(err) {
+            console.log('HempHive: ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+    
+    // Initialize page - loading indicator removed as requested
+    
+    // Test keyboard immediately
+    console.log('Setting up keyboard test...');
+    document.addEventListener('keydown', function(e) {
+      console.log('TEST: Key pressed:', e.key);
+    });
+    
+    // Keyboard handling is now in the main window.addEventListener above
+  </script>
+
+</body>
+</html>

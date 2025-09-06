@@ -1,0 +1,21 @@
+{
+  "name": "HempHive - Future of Hemp Innovation",
+  "short_name": "HempHive",
+  "description": "Discover the future of hemp innovation through interactive experiences, music streaming, and sustainable technology.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ffcc33",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["lifestyle", "music", "entertainment"],
+  "lang": "en",
+  "scope": "/",
+  "prefer_related_applications": false
+}
