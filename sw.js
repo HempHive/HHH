@@ -1,74 +1,56 @@
-// HempHive Service Worker
-const CACHE_NAME = 'hemphive-v2';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/main.png',
-  '/favicon.ico',
-  '/radio.txt',
-  '/manifest.json',
-  // Add other critical resources
-];
+// HempHive Service Worker - Simplified
+const CACHE_NAME = 'hemphive-v3';
 
-// Install event - cache resources
+// Install event - minimal caching
 self.addEventListener('install', function(event) {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('HempHive: Caching resources');
-        return cache.addAll(urlsToCache);
-      })
-  );
-  // Don't force activation to prevent infinite reloads
-  // self.skipWaiting();
+  console.log('HempHive: Service Worker installing');
+  self.skipWaiting();
 });
 
-// Fetch event - serve from cache when offline, but always check network first for updates
+// Fetch event - simple network-first approach
 self.addEventListener('fetch', function(event) {
-  // Skip caching for external resources and audio streams
-  if (event.request.url.includes('hemphive.github.io') || 
-      event.request.url.includes('stream') ||
-      event.request.url.includes('radio') ||
-      event.request.url.includes('mp3') ||
-      event.request.url.includes('webm')) {
+  // Only cache static assets, not dynamic content
+  if (event.request.url.includes('.png') || 
+      event.request.url.includes('.ico') || 
+      event.request.url.includes('.webm') ||
+      event.request.url.includes('.txt')) {
+    
+    event.respondWith(
+      caches.match(event.request)
+        .then(function(response) {
+          if (response) {
+            return response;
+          }
+          return fetch(event.request).then(function(response) {
+            if (response.status === 200) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then(function(cache) {
+                cache.put(event.request, responseClone);
+              });
+            }
+            return response;
+          });
+        })
+    );
+  } else {
+    // For all other requests, just fetch from network
     event.respondWith(fetch(event.request));
-    return;
   }
-  
-  event.respondWith(
-    fetch(event.request)
-      .then(function(response) {
-        // If it's a successful response, cache it
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME)
-            .then(function(cache) {
-              cache.put(event.request, responseClone);
-            });
-        }
-        return response;
-      })
-      .catch(function() {
-        // If network fails, try to serve from cache
-        return caches.match(event.request);
-      })
-  );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up
 self.addEventListener('activate', function(event) {
+  console.log('HempHive: Service Worker activated');
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
         cacheNames.map(function(cacheName) {
           if (cacheName !== CACHE_NAME) {
-            console.log('HempHive: Deleting old cache');
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
-  // Don't take control immediately to prevent conflicts
-  // self.clients.claim();
+  self.clients.claim();
 });

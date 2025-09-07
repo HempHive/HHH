@@ -34,7 +34,7 @@
   
   <!-- Preload Critical Resources -->
   <link rel="preload" href="main.png" as="image" />
-  <link rel="preload" href="marissa.webm" as="video" />
+  <!-- Remove video preload to improve initial loading -->
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
@@ -448,6 +448,7 @@
         transition-duration: 0.01ms !important;
       }
     }
+
     /* Focus preview overlay */
     #focusOverlay {
       position: fixed;
@@ -530,7 +531,7 @@
   <div class="glow-overlay" aria-hidden="true"></div>
 
   <!-- Ambient background video (hidden by default) -->
-  <video id="ambientVideo" preload="metadata" playsinline webkit-playsinline muted loop aria-label="Ambient background video">
+  <video id="ambientVideo" preload="none" playsinline webkit-playsinline muted loop aria-label="Ambient background video">
     <source src="output.webm" type="video/webm">
     <p>Your browser doesn't support video playback.</p>
   </video>
@@ -573,19 +574,19 @@
 
   <!-- Videos -->
   <div id="videoOverlay" class="video-overlay" aria-hidden="true">
-    <video id="vid-bln" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+    <video id="vid-bln" class="overlay-video" preload="none" playsinline webkit-playsinline muted loop>
       <source src="bln.webm" type="video/webm">
     </video>
-    <video id="vid-grn" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+    <video id="vid-grn" class="overlay-video" preload="none" playsinline webkit-playsinline muted loop>
       <source src="grn.webm" type="video/webm">
     </video>
-    <video id="lucky-video" class="overlay-video" preload="metadata" playsinline webkit-playsinline loop>
+    <video id="lucky-video" class="overlay-video" preload="none" playsinline webkit-playsinline loop>
       <source src="marissa.webm" type="video/webm">
     </video>
-    <video id="vid-red" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+    <video id="vid-red" class="overlay-video" preload="none" playsinline webkit-playsinline muted loop>
       <source src="red.webm" type="video/webm">
     </video>
-    <video id="vid-pme" class="overlay-video" preload="metadata" playsinline webkit-playsinline muted loop>
+    <video id="vid-pme" class="overlay-video" preload="none" playsinline webkit-playsinline muted loop>
       <source src="pme.webm" type="video/webm">
     </video>
   </div>
@@ -639,6 +640,9 @@
     var welcomeRevealed = false;
     // Background image metrics for positioning media relative to the hero
     var bgMetrics = { ready: false, left: 0, top: 0, width: 0, height: 0, aspect: 16/9 };
+    // Loading state management
+    var pageLoaded = false;
+    var loadingComplete = false;
     
     // Global error handler
     window.addEventListener('error', function(e) {
@@ -917,12 +921,23 @@
     var resizeTimer;
     window.addEventListener('resize', function(){
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function(){ buildHoneycomb(); computeBgMetrics(); positionMediaElements(); }, 120);
+      resizeTimer = setTimeout(function(){ 
+        if (loadingComplete) {
+          buildHoneycomb(); 
+          computeBgMetrics(); 
+          positionMediaElements(); 
+        }
+      }, 120);
     });
     window.addEventListener('orientationchange', function(){
-      setTimeout(function(){ buildHoneycomb(); computeBgMetrics(); positionMediaElements(); }, 200);
+      setTimeout(function(){ 
+        if (loadingComplete) {
+          buildHoneycomb(); 
+          computeBgMetrics(); 
+          positionMediaElements(); 
+        }
+      }, 200);
     });
-    document.addEventListener('DOMContentLoaded', function(){ buildHoneycomb(); computeBgMetrics(); positionMediaElements(); });
 
     // Trigger reveal animation: split hex grid and show background
     function triggerWelcomeReveal() {
@@ -2018,32 +2033,44 @@
       });
     }
     
-    // Register Service Worker for PWA functionality
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js?v=' + Date.now())
-          .then(function(registration) {
-            console.log('HempHive: ServiceWorker registration successful');
-            
-            // Check for updates (without auto-reload to prevent infinite loops)
-            registration.addEventListener('updatefound', function() {
-              console.log('HempHive: ServiceWorker update found');
-              var newWorker = registration.installing;
-              newWorker.addEventListener('statechange', function() {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('HempHive: New service worker installed - manual refresh recommended');
-                  // Don't auto-reload to prevent infinite loops
-                }
-              });
-            });
-          })
-          .catch(function(err) {
-            console.log('HempHive: ServiceWorker registration failed: ', err);
-          });
-      });
-    }
     
-    // Initialize page - loading indicator removed as requested
+    // Initialize page with proper loading sequence
+    function initializePage() {
+      if (pageLoaded) return;
+      pageLoaded = true;
+      
+      console.log('Initializing HempHive...');
+      
+      // Step 1: Build honeycomb
+      buildHoneycomb();
+      
+      // Step 2: Compute background metrics
+      computeBgMetrics();
+      
+      // Step 3: Position media elements
+      positionMediaElements();
+      
+      // Step 4: Load resources
+      loadResources();
+      
+      // Step 5: Mark as complete and register service worker
+      setTimeout(function() {
+        loadingComplete = true;
+        console.log('HempHive initialization complete');
+        
+        
+        // Register service worker after initialization
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('HempHive: ServiceWorker registration successful');
+            })
+            .catch(function(err) {
+              console.log('HempHive: ServiceWorker registration failed: ', err);
+            });
+        }
+      }, 1000);
+    }
     
     // Track user interaction for audio context
     document.addEventListener('click', function() {
@@ -2055,6 +2082,13 @@
       userInteracted = true;
       initializeAudioContext();
     }, { once: false });
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+      initializePage();
+    }
     
     // Keyboard handling is now in the main window.addEventListener above
   </script>
