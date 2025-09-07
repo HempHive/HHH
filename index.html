@@ -114,40 +114,6 @@
       50% { opacity: 0.4; }
     }
 
-    .center-container {
-      position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 3;
-    }
-
-    .hex {
-      width: 12vw;
-      height: 12vw;
-      max-width: 120px;
-      max-height: 120px;
-      color: white;
-      font-size: 3rem;
-      text-align: center;
-      text-shadow: 0 0 10px #ffcc33, 0 0 20px #ff9900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.5);
-      clip-path: polygon(
-        25% 5%, 75% 5%, 
-        100% 50%, 75% 95%, 
-        25% 95%, 0% 50%
-      );
-      border: 2px solid #ffcc33;
-      border-radius: 12px;
-      transition: opacity 1s ease-out;
-    }
-
-    .hex.fade-out {
-      opacity: 0;
-    }
 
     /* Honeycomb canvas (SVG background + interactive buttons overlay) */
     #honeycomb {
@@ -237,9 +203,15 @@
     .widebar .content { width: min(1200px, 92vw); text-align: center; letter-spacing: 0.5px; }
     @media (max-width: 768px) { .widebar { height: 56px; } }
 
-    /* Slide-in animation for bars after background fades */
-    .widebar { transform: translateY(-100%); opacity: 0; transition: transform 0.6s ease, opacity 0.6s ease; }
+    /* Slide-in animation for bars - start hidden, only show in welcome state */
+    .widebar { 
+      transform: translateY(-100%); 
+      opacity: 0; 
+      transition: transform 0.6s ease, opacity 0.6s ease; 
+      display: none; /* Start completely hidden */
+    }
     .widebar.bottom { transform: translateY(100%); }
+    body.show-bars .widebar { display: flex; } /* Show when welcome state is active */
     body.show-bars .widebar.top { transform: translateY(0); opacity: 1; }
     body.show-bars .widebar.bottom { transform: translateY(0); opacity: 1; }
 
@@ -415,7 +387,6 @@
 
     /* Enhanced responsive design */
     @media (max-width: 768px) {
-      .hex,
       .hex-button {
         width: 16vw;
         height: 16vw;
@@ -437,14 +408,9 @@
         width: 95vw;
         padding: 16px;
       }
-      
-      .hex {
-        font-size: 2rem;
-      }
     }
     
     @media (max-width: 480px) {
-      .hex,
       .hex-button {
         width: 20vw;
         height: 20vw;
@@ -460,10 +426,6 @@
       .widebar {
         height: 44px;
         font-size: 12px;
-      }
-      
-      .hex {
-        font-size: 1.5rem;
       }
     }
     
@@ -573,10 +535,6 @@
   <!-- Hidden background hero image (reveals on Welcome) -->
   <div id="bgMain" class="bg-image" aria-hidden="true" role="img" aria-label="HempHive hero background image"></div>
 
-  <!-- Top emoji - removed as requested -->
-  <div class="center-container">
-    <div class="hex" id="hex" role="img" aria-label="Hemp leaf and bee emoji"></div>
-  </div>
 
   <!-- Honeycomb grid (SVG background + buttons perfectly aligned) -->
   <div id="honeycomb" aria-label="HempHive navigation">
@@ -714,12 +672,7 @@
       img.src = 'main.png';
     })();
 
-    // Fade out the hero emoji after a brief moment
-    setTimeout(() => {
-      var topHex = document.getElementById('hex');
-      if (topHex) { topHex.classList.add('fade-out'); }
-      // Bars will now only show after Welcome button is clicked
-    }, 1500);
+    // Initial page setup - no emoji fade needed
 
     // Generate responsive honeycomb SVG with interactive cells
     function buildHoneycomb() {
@@ -983,6 +936,12 @@
 
       // Show widescreen bars when Welcome is clicked
       document.body.classList.add('show-bars');
+      
+      // Force show bars immediately
+      var topBar = document.querySelector('.widebar.top');
+      var bottomBar = document.querySelector('.widebar.bottom');
+      if (topBar) topBar.style.display = 'flex';
+      if (bottomBar) bottomBar.style.display = 'flex';
 
       // Disable interactions on the comb
       if (honey) { honey.style.pointerEvents = 'none'; }
@@ -1039,6 +998,12 @@
 
       // Remove show-bars class to hide widescreen bars
       document.body.classList.remove('show-bars');
+      
+      // Force hide bars immediately
+      var topBar = document.querySelector('.widebar.top');
+      var bottomBar = document.querySelector('.widebar.bottom');
+      if (topBar) topBar.style.display = 'none';
+      if (bottomBar) bottomBar.style.display = 'none';
 
       // Re-enable interactions on the comb
       if (honey) { honey.style.pointerEvents = 'auto'; }
@@ -1064,6 +1029,76 @@
         
         welcomeRevealed = false;
       }, 100); // Much faster transition
+    }
+
+    // Resources system
+    var resourcesList = [];
+    
+    function loadResources() {
+      return fetch('resources.txt')
+        .then(function(response) {
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          return response.text();
+        })
+        .then(function(text) {
+          // Parse resources.txt - format: URL | Description
+          var lines = text.split('\n');
+          resourcesList = [];
+          
+          lines.forEach(function(line) {
+            line = line.trim();
+            if (!line || line.startsWith('#')) return; // Skip empty lines and comments
+            
+            var parts = line.split(' | ');
+            if (parts.length >= 2) {
+              resourcesList.push({
+                url: parts[0].trim(),
+                description: parts[1].trim()
+              });
+            }
+          });
+          
+          console.log('Loaded resources:', resourcesList.length);
+        })
+        .catch(function(err) {
+          console.warn('Failed to load resources.txt:', err.message);
+          // Fallback resources
+          resourcesList = [
+            { url: 'https://hemphive.farm', description: 'HempHive Main Site' }
+          ];
+        });
+    }
+    
+    function renderResources() {
+      var container = document.getElementById('resourcesList');
+      if (!container) return;
+      
+      container.innerHTML = '';
+      
+      if (resourcesList.length === 0) {
+        container.innerHTML = '<div style="color:#ffda4d;text-align:center;padding:20px;">Loading resources...</div>';
+        return;
+      }
+      
+      resourcesList.forEach(function(resource) {
+        var div = document.createElement('div');
+        div.style.cssText = 'margin: 12px 0; padding: 12px; background: rgba(255,204,51,0.1); border-radius: 8px; border-left: 4px solid #ffcc33;';
+        
+        var link = document.createElement('a');
+        link.href = resource.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.cssText = 'color: #ffda4d; text-decoration: none; font-weight: bold; display: block; margin-bottom: 4px;';
+        link.textContent = resource.url;
+        
+        var desc = document.createElement('div');
+        desc.style.cssText = 'color: #ccc; font-size: 14px; margin-top: 4px;';
+        desc.textContent = resource.description;
+        
+        div.appendChild(link);
+        div.appendChild(desc);
+        container.appendChild(div);
+      });
     }
 
     // Chat system
@@ -1142,6 +1177,15 @@
           '<button onclick="sendChatMessage()" style="padding: 8px 16px; background: #ffcc33; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Send</button>' +
           '</div>';
         renderChatMessages();
+      } else if (title === 'Resources') {
+        contentEl.innerHTML = '<div id="resourcesList" style="max-height: 50vh; overflow-y: auto;"></div>';
+        if (resourcesList.length === 0) {
+          loadResources().then(function() {
+            renderResources();
+          });
+        } else {
+          renderResources();
+        }
       } else {
         contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover About, Shop, Projects, Chat, Medical, and Resources.</p>' : ('<p>'+title+' content coming soon…</p>');
       }
@@ -1860,12 +1904,6 @@
     }
     
     // Initialize page - loading indicator removed as requested
-    
-    // Test keyboard immediately
-    console.log('Setting up keyboard test...');
-    document.addEventListener('keydown', function(e) {
-      console.log('TEST: Key pressed:', e.key);
-    });
     
     // Keyboard handling is now in the main window.addEventListener above
   </script>
