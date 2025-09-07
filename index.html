@@ -1288,7 +1288,16 @@
     var radioList = [];
     var currentIdx = -1;
     var audio = new Audio();
+    var audioContextInitialized = false;
+    var userInteracted = false;
     audio.crossOrigin = 'anonymous';
+    
+    // Initialize audio context on first user interaction
+    function initializeAudioContext() {
+      if (audioContextInitialized || !userInteracted) return;
+      audioContextInitialized = true;
+      console.log('Audio context initialized');
+    }
 
     function openMusicPanel() {
       console.log('Opening music panel...');
@@ -1297,6 +1306,7 @@
       var contentEl = document.getElementById('panelContent');
       titleEl.textContent = 'Music';
       contentEl.innerHTML = '<div id="nowPlaying" style="margin-bottom:10px;color:#ffda4d;">Not playing</div>'+
+        '<div id="audioStatus" style="margin-bottom:10px;color:#ccc;font-size:12px;">Click a station to start playing</div>'+
         '<div id="stations" style="max-height:40vh;overflow:auto;margin-bottom:12px;">Stations</div>'+
         '<div style="display:flex;gap:10px;justify-content:center;">'+
         '<button id="btnPrev" class="ui-btn">⏮ Prev</button>'+ 
@@ -1457,6 +1467,10 @@
     function playCurrent() {
       if (currentIdx < 0 || !radioList[currentIdx]) return;
       
+      // Mark user interaction
+      userInteracted = true;
+      initializeAudioContext();
+      
       // Stop current audio
       try { 
         audio.pause(); 
@@ -1468,34 +1482,47 @@
       audio.removeEventListener('error', handleAudioError);
       audio.removeEventListener('canplay', handleAudioCanPlay);
       audio.removeEventListener('loadstart', handleAudioLoadStart);
+      audio.removeEventListener('abort', handleAudioAbort);
       
       // Add new event listeners
       audio.addEventListener('error', handleAudioError);
       audio.addEventListener('canplay', handleAudioCanPlay);
       audio.addEventListener('loadstart', handleAudioLoadStart);
+      audio.addEventListener('abort', handleAudioAbort);
       
-      // Set new source
+      // Set new source with timeout
       audio.src = radioList[currentIdx].url;
       audio.crossOrigin = 'anonymous';
+      audio.preload = 'none'; // Don't preload to avoid abort issues
       
-      // Try to play
-      var playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(function(){ 
-          setMusicPlaying(true); 
-          updateNowPlaying();
-        }).catch(function(err){ 
-          console.warn('Audio play failed:', err);
-          setMusicPlaying(false);
-          updateNowPlaying();
-        });
-      }
+      // Add a small delay before playing to ensure source is set
+      updateAudioStatus('Loading station...');
+      setTimeout(function() {
+        if (audio.src && userInteracted) {
+          var playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.then(function(){ 
+              setMusicPlaying(true); 
+              updateNowPlaying();
+              updateAudioStatus('Playing successfully');
+            }).catch(function(err){ 
+              console.warn('Audio play failed:', err);
+              setMusicPlaying(false);
+              updateNowPlaying();
+              updateAudioStatus('Playback failed - try another station');
+            });
+          }
+        } else {
+          updateAudioStatus('User interaction required - click to play');
+        }
+      }, 100);
     }
     
     function handleAudioError() {
       console.warn('Audio error for station:', radioList[currentIdx] ? radioList[currentIdx].name : 'unknown');
       setMusicPlaying(false);
       updateNowPlaying();
+      updateAudioStatus('Error loading station - try another one');
     }
     
     function handleAudioCanPlay() {
@@ -1504,6 +1531,13 @@
     
     function handleAudioLoadStart() {
       console.log('Audio loading started for station:', radioList[currentIdx] ? radioList[currentIdx].name : 'unknown');
+    }
+    
+    function handleAudioAbort() {
+      console.warn('Audio loading aborted for station:', radioList[currentIdx] ? radioList[currentIdx].name : 'unknown');
+      setMusicPlaying(false);
+      updateNowPlaying();
+      updateAudioStatus('Audio loading aborted - click to try again');
     }
     function stopMusic() { audio.pause(); setMusicPlaying(false); }
     function toggleMusic() { if (audio.paused) playCurrent(); else stopMusic(); }
@@ -1518,6 +1552,14 @@
       if (!np) return;
       if (currentIdx >= 0 && radioList[currentIdx]) { np.textContent = 'Playing: '+radioList[currentIdx].name; }
       else { np.textContent = 'Not playing'; }
+    }
+    
+    function updateAudioStatus(message) {
+      var status = document.getElementById('audioStatus');
+      if (status) {
+        status.textContent = message;
+        status.style.color = message.includes('Error') || message.includes('aborted') ? '#ff6b6b' : '#ccc';
+      }
     }
 
     function setMusicPlaying(isPlaying) {
@@ -1983,14 +2025,14 @@
           .then(function(registration) {
             console.log('HempHive: ServiceWorker registration successful');
             
-            // Check for updates
+            // Check for updates (without auto-reload to prevent infinite loops)
             registration.addEventListener('updatefound', function() {
               console.log('HempHive: ServiceWorker update found');
               var newWorker = registration.installing;
               newWorker.addEventListener('statechange', function() {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('HempHive: New service worker installed, reloading page');
-                  window.location.reload();
+                  console.log('HempHive: New service worker installed - manual refresh recommended');
+                  // Don't auto-reload to prevent infinite loops
                 }
               });
             });
@@ -2002,6 +2044,17 @@
     }
     
     // Initialize page - loading indicator removed as requested
+    
+    // Track user interaction for audio context
+    document.addEventListener('click', function() {
+      userInteracted = true;
+      initializeAudioContext();
+    }, { once: false });
+    
+    document.addEventListener('keydown', function() {
+      userInteracted = true;
+      initializeAudioContext();
+    }, { once: false });
     
     // Keyboard handling is now in the main window.addEventListener above
   </script>

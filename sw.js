@@ -19,8 +19,8 @@ self.addEventListener('install', function(event) {
         return cache.addAll(urlsToCache);
       })
   );
-  // Force activation of new service worker
-  self.skipWaiting();
+  // Don't force activation to prevent infinite reloads
+  // self.skipWaiting();
 });
 
 // Fetch event - serve from cache when offline, but always check network first for updates
@@ -69,6 +69,6 @@ self.addEventListener('activate', function(event) {
       );
     })
   );
-  // Take control of all clients immediately
-  self.clients.claim();
+  // Don't take control immediately to prevent conflicts
+  // self.clients.claim();
 });
