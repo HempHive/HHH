@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>HempHive • Welcome to the Future of Hemp Innovation</title>
   
   <!-- SEO Meta Tags -->
@@ -1211,11 +1214,44 @@
       if (stdPanel) { stdPanel.classList.remove('show'); stdPanel.setAttribute('aria-hidden','true'); }
       var backdrop = document.getElementById('autoTraderBackdrop');
       var frame = document.getElementById('autoFrame');
+      
       if (frame) {
-        try { frame.removeAttribute('src'); } catch(_e){}
-        // Set src every time in case of prior failures
-        frame.src = 'https://hemphive.github.io/ATB2/';
+        // Clear any existing content
+        try { 
+          frame.removeAttribute('src'); 
+          frame.style.display = 'none';
+        } catch(_e){}
+        
+        // Add loading indicator
+        var loadingDiv = document.createElement('div');
+        loadingDiv.id = 'atbLoading';
+        loadingDiv.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ffda4d;font-size:18px;z-index:10;';
+        loadingDiv.textContent = 'Loading AutoTrader Dashboard...';
+        frame.parentNode.appendChild(loadingDiv);
+        
+        // Set up iframe load handler
+        frame.onload = function() {
+          console.log('AutoTrader iframe loaded successfully');
+          var loading = document.getElementById('atbLoading');
+          if (loading) loading.remove();
+          frame.style.display = 'block';
+        };
+        
+        frame.onerror = function() {
+          console.error('AutoTrader iframe failed to load');
+          var loading = document.getElementById('atbLoading');
+          if (loading) {
+            loading.textContent = 'Failed to load AutoTrader Dashboard';
+            loading.style.color = '#ff6b6b';
+          }
+        };
+        
+        // Set src with cache busting
+        var timestamp = new Date().getTime();
+        frame.src = 'https://hemphive.github.io/ATB2/?t=' + timestamp;
+        frame.style.display = 'block';
       }
+      
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
       console.log('AutoTrader panel opened');
@@ -1223,6 +1259,19 @@
     function closeAutoTraderPanel() {
       console.log('Closing AutoTrader panel...');
       var backdrop = document.getElementById('autoTraderBackdrop');
+      var frame = document.getElementById('autoFrame');
+      var loading = document.getElementById('atbLoading');
+      
+      // Clean up loading indicator
+      if (loading) {
+        loading.remove();
+      }
+      
+      // Hide iframe
+      if (frame) {
+        frame.style.display = 'none';
+      }
+      
       backdrop.classList.remove('show');
       backdrop.setAttribute('aria-hidden','true');
       console.log('AutoTrader panel closed');
@@ -1300,7 +1349,12 @@
         
         fetch(path, { 
           cache: 'no-cache',
-          mode: 'cors'
+          mode: 'cors',
+          credentials: 'omit',
+          headers: {
+            'Accept': 'text/plain, */*',
+            'Cache-Control': 'no-cache'
+          }
         }).then(function(r){
           console.log('Response status:', r.status, 'for path:', path);
           if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1402,22 +1456,54 @@
 
     function playCurrent() {
       if (currentIdx < 0 || !radioList[currentIdx]) return;
-      try { audio.pause(); } catch(e){}
-      audio.src = '';
-      audio.load();
+      
+      // Stop current audio
+      try { 
+        audio.pause(); 
+        audio.src = '';
+        audio.load();
+      } catch(e){}
+      
+      // Remove existing event listeners to prevent duplicates
+      audio.removeEventListener('error', handleAudioError);
+      audio.removeEventListener('canplay', handleAudioCanPlay);
+      audio.removeEventListener('loadstart', handleAudioLoadStart);
+      
+      // Add new event listeners
+      audio.addEventListener('error', handleAudioError);
+      audio.addEventListener('canplay', handleAudioCanPlay);
+      audio.addEventListener('loadstart', handleAudioLoadStart);
+      
+      // Set new source
       audio.src = radioList[currentIdx].url;
+      audio.crossOrigin = 'anonymous';
       
-      // Add error handling for audio
-      audio.addEventListener('error', function() {
-        setMusicPlaying(false);
-      });
-      
-      audio.play().then(function(){ 
-        setMusicPlaying(true); 
-      }).catch(function(err){ 
-        setMusicPlaying(false);
-      });
+      // Try to play
+      var playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(function(){ 
+          setMusicPlaying(true); 
+          updateNowPlaying();
+        }).catch(function(err){ 
+          console.warn('Audio play failed:', err);
+          setMusicPlaying(false);
+          updateNowPlaying();
+        });
+      }
+    }
+    
+    function handleAudioError() {
+      console.warn('Audio error for station:', radioList[currentIdx] ? radioList[currentIdx].name : 'unknown');
+      setMusicPlaying(false);
       updateNowPlaying();
+    }
+    
+    function handleAudioCanPlay() {
+      console.log('Audio can play for station:', radioList[currentIdx] ? radioList[currentIdx].name : 'unknown');
+    }
+    
+    function handleAudioLoadStart() {
+      console.log('Audio loading started for station:', radioList[currentIdx] ? radioList[currentIdx].name : 'unknown');
     }
     function stopMusic() { audio.pause(); setMusicPlaying(false); }
     function toggleMusic() { if (audio.paused) playCurrent(); else stopMusic(); }
@@ -1893,9 +1979,21 @@
     // Register Service Worker for PWA functionality
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/sw.js?v=' + Date.now())
           .then(function(registration) {
             console.log('HempHive: ServiceWorker registration successful');
+            
+            // Check for updates
+            registration.addEventListener('updatefound', function() {
+              console.log('HempHive: ServiceWorker update found');
+              var newWorker = registration.installing;
+              newWorker.addEventListener('statechange', function() {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('HempHive: New service worker installed, reloading page');
+                  window.location.reload();
+                }
+              });
+            });
           })
           .catch(function(err) {
             console.log('HempHive: ServiceWorker registration failed: ', err);
