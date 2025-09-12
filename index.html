@@ -233,6 +233,13 @@
       background: radial-gradient(circle at center, rgba(156, 39, 176, 0.2), transparent 70%);
     }
 
+    /* Chat unread indicator */
+    .hex-cell.chat-unread polygon {
+      stroke: rgba(255, 0, 0, 0.85);
+      stroke-width: 3;
+      fill: rgba(255, 0, 0, 0.18);
+    }
+
     .hex-button {
       position: absolute;
       width: 120px; /* will be overridden inline for perfect alignment */
@@ -271,6 +278,15 @@
       filter: brightness(1) saturate(1);
       transition: opacity 0.35s ease, filter 0.25s ease;
     }
+    /* Fallback: show label if PNG missing */
+    .hex-button.circle-btn.show-label { border: 1px solid #ffcc33; background: rgba(0,0,0,0.25); }
+    .hex-button.circle-btn.show-label .label { display: inline !important; opacity: 1; transform: none; color: #ffda4d; font-weight: 700; }
+    /* Lights button fade control */
+    #lightsButton { transition: opacity 0.35s ease, filter 0.25s ease; }
+    #lightsButton.lights-faded { opacity: 0; }
+    /* Lights button fade control */
+    #lightsButton { transition: opacity 0.35s ease, filter 0.25s ease; }
+    #lightsButton.lights-faded { opacity: 0; }
     .hex-button.circle-btn:hover,
     .hex-button.circle-btn:focus-visible {
       border-color: transparent;
@@ -556,6 +572,10 @@
   <button id="aButton" class="hex-button circle-btn" aria-label="Play marissa video" style="left:50%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:140px;height:121px;">
     <span class="label">A</span>
   </button>
+  <!-- Central lights button under A (toggles ambient video) -->
+  <button id="lightsButton" class="hex-button circle-btn" aria-label="Toggle ambient lights" style="left:50%;top:92%;transform:translate(-50%,-50%);position:fixed;z-index:6;display:none;width:120px;height:104px;">
+    <span class="label">Lights</span>
+  </button>
   <button id="oButton" class="hex-button circle-btn" aria-label="Play ambient video" style="left:65%;top:86%;transform:translate(-50%,-50%);position:fixed;z-index:5;display:none;width:120px;height:104px;">
     <span class="label">O</span>
   </button>
@@ -612,8 +632,8 @@
         if (!el) return;
         var url = pngName;
         var img = new Image();
-        img.onload = function(){ el.style.backgroundImage = 'url(' + url + ')'; };
-        img.onerror = function(){ el.style.backgroundImage = ''; };
+        img.onload = function(){ el.style.backgroundImage = 'url(' + url + ')'; try { el.classList.remove('show-label'); } catch(_e) {} };
+        img.onerror = function(){ el.style.backgroundImage = ''; try { el.classList.add('show-label'); } catch(_e) {} };
         img.src = url;
       }
       // Map buttons to optional pngs; fallback to labels if not found
@@ -622,6 +642,7 @@
       trySetBackground('aButton', 'btn-center.png');
       trySetBackground('btn-red', 'btn-red.png');
       trySetBackground('btn-pme', 'btn-pme.png');
+      trySetBackground('lightsButton', 'lights.png');
     })();
   </script>
 
@@ -664,9 +685,11 @@
         'btn-grn': { x: 32, y: 86, w: 10 },
         'aButton': { x: 50, y: 86, w: 12 },
         'btn-red': { x: 68, y: 86, w: 10 },
-        'btn-pme': { x: 88, y: 86, w: 10 }
+        'btn-pme': { x: 88, y: 86, w: 10 },
+        'lightsButton': { x: 50, y: 92, w: 10 }
       }
     };
+    var currentBgImage = 'main.png';
     (function initBgAspect(){
       var img = new Image();
       img.onload = function(){
@@ -676,8 +699,30 @@
           positionMediaElements();
         }
       };
-      img.src = 'main.png';
+      img.src = currentBgImage;
+      try {
+        var bgEl = document.getElementById('bgMain');
+        if (bgEl) { bgEl.style.backgroundImage = 'url(' + currentBgImage + ')'; }
+      } catch(_e) {}
     })();
+
+    function setBackgroundImage(url) {
+      if (!url) return;
+      currentBgImage = url;
+      try {
+        var bgEl = document.getElementById('bgMain');
+        if (bgEl) { bgEl.style.backgroundImage = 'url(' + currentBgImage + ')'; }
+      } catch(_e) {}
+      var img = new Image();
+      img.onload = function(){
+        if (img.naturalWidth && img.naturalHeight) {
+          bgMetrics.aspect = img.naturalWidth / img.naturalHeight;
+          computeBgMetrics();
+          positionMediaElements();
+        }
+      };
+      img.src = currentBgImage;
+    }
 
     // Initial page setup - no emoji fade needed
 
@@ -854,6 +899,9 @@
             gr.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel(name); }});
             var t = gr.querySelector('text'); if (t) { t.textContent = name; }
             labelToGroup[name] = gr;
+            if (name === 'Chat') {
+              try { window.__chatGroup = gr; } catch(_e) {}
+            }
           });
 
           // Center mapping - open Welcome panel
@@ -988,7 +1036,7 @@
       setTimeout(function(){
         try { svg.style.filter = 'blur(1px)'; } catch(e){}
         // Reveal control buttons
-        ;['wButton','aButton','oButton','btn-bln','btn-grn','btn-red','btn-pme'].forEach(function(id){
+        ;['wButton','aButton','oButton','btn-bln','btn-grn','btn-red','btn-pme','lightsButton'].forEach(function(id){
           var b = document.getElementById(id);
           if (b) b.style.display = 'inline-flex';
         });
@@ -1038,13 +1086,15 @@
       setTimeout(function(){
         try { svg.style.filter = 'none'; } catch(e){}
         // Hide control buttons immediately when returning to main screen
-        ;['wButton','aButton','oButton','btn-bln','btn-grn','btn-red','btn-pme'].forEach(function(id){
+        ;['wButton','aButton','oButton','btn-bln','btn-grn','btn-red','btn-pme','lightsButton'].forEach(function(id){
           var b = document.getElementById(id);
           if (b) b.style.display = 'none';
         });
         
         // Widescreen bars are hidden by removing show-bars class
         
+        // Recompute background metrics after returning, in case viewport changed
+        try { computeBgMetrics(); positionMediaElements(); } catch(_e) {}
         welcomeRevealed = false;
       }, 100); // Much faster transition
     }
@@ -1119,64 +1169,140 @@
       });
     }
 
-    // Chat system
+    // Chat system (API-backed with 60-minute TTL and unread indicator)
     var chatMessages = [];
-    var chatTimer = null;
-    
-    function addChatMessage(message) {
-      var timestamp = new Date();
-      chatMessages.push({
-        message: message,
-        timestamp: timestamp,
-        id: Date.now() + Math.random()
-      });
-      
-      // Remove messages older than 30 minutes
-      var thirtyMinutesAgo = new Date(timestamp.getTime() - 30 * 60 * 1000);
-      chatMessages = chatMessages.filter(function(msg) {
-        return msg.timestamp > thirtyMinutesAgo;
-      });
-      
-      // Update chat display if panel is open
-      if (document.getElementById('panelTitle').textContent === 'Chat') {
-        renderChatMessages();
-      }
-      
-      // Set timer to clean up this message in 30 minutes
-      if (chatTimer) clearTimeout(chatTimer);
-      chatTimer = setTimeout(function() {
-        var now = new Date();
-        chatMessages = chatMessages.filter(function(msg) {
-          return (now - msg.timestamp) < 30 * 60 * 1000;
-        });
-        if (document.getElementById('panelTitle').textContent === 'Chat') {
-          renderChatMessages();
-        }
-      }, 30 * 60 * 1000);
+    var chatPollTimer = null;
+    var chatState = {
+      apiBase: (function(){
+        try {
+          var def = '';
+          if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') def = 'http://localhost:8080';
+          return (window.CHAT_API_URL || localStorage.getItem('CHAT_API_URL') || def);
+        } catch(_e) { return ''; }
+      })(),
+      roomId: 'public',
+      readerId: (function(){
+        try {
+          var id = localStorage.getItem('chatReaderId');
+          if (!id) { id = 'r-' + Math.random().toString(36).slice(2, 10); localStorage.setItem('chatReaderId', id); }
+          return id;
+        } catch(_e) { return 'anon'; }
+      })(),
+      lastFetchTs: 0,
+      unread: false,
+      unreadExpiry: 0
+    };
+
+    function isChatPanelOpen() {
+      var titleEl = document.getElementById('panelTitle');
+      var backdrop = document.getElementById('panelBackdrop');
+      return !!(backdrop && backdrop.classList.contains('show') && titleEl && titleEl.textContent === 'Chat');
     }
-    
+
+    function setChatUnread(flag) {
+      chatState.unread = !!flag;
+      var gr = window.__chatGroup;
+      if (!gr) return;
+      if (chatState.unread) gr.classList.add('chat-unread'); else gr.classList.remove('chat-unread');
+    }
+
+    function refreshUnreadExpiry() {
+      chatState.unreadExpiry = Date.now() + 60 * 60 * 1000;
+    }
+
     function renderChatMessages() {
       var container = document.getElementById('chatMessages');
       if (!container) return;
-      
       container.innerHTML = '';
-      chatMessages.forEach(function(msg) {
-        var div = document.createElement('div');
-        div.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(255,204,51,0.1); border-radius: 6px; border-left: 3px solid #ffcc33;';
-        div.textContent = msg.message;
-        container.appendChild(div);
-      });
-      
-      // Scroll to bottom
+      chatMessages
+        .sort(function(a,b){ return a.ts - b.ts; })
+        .forEach(function(msg) {
+          var div = document.createElement('div');
+          div.style.cssText = 'margin: 8px 0; padding: 8px; background: rgba(255,204,51,0.1); border-radius: 6px; border-left: 3px solid #ffcc33;';
+          div.textContent = msg.text || msg.message || '';
+          container.appendChild(div);
+        });
       container.scrollTop = container.scrollHeight;
     }
-    
+
+    function gcLocalChat() {
+      var cutoff = Date.now() - 60 * 60 * 1000;
+      chatMessages = chatMessages.filter(function(m){ return (m.ts || (m.timestamp && m.timestamp.getTime())) > cutoff; });
+    }
+
+    function upsertMessages(newMsgs) {
+      if (!Array.isArray(newMsgs) || !newMsgs.length) return 0;
+      var byId = Object.create(null);
+      chatMessages.forEach(function(m){ if (m.id) byId[m.id] = true; });
+      var added = 0;
+      newMsgs.forEach(function(m){
+        if (m && m.id && !byId[m.id]) { chatMessages.push(m); added++; }
+      });
+      gcLocalChat();
+      return added;
+    }
+
+    function fetchChatMessages() {
+      if (!chatState.apiBase) return Promise.resolve(0);
+      var url = chatState.apiBase.replace(/\/$/, '') + '/messages?room=' + encodeURIComponent(chatState.roomId) + (chatState.lastFetchTs ? ('&since=' + chatState.lastFetchTs) : '');
+      return fetch(url, { cache: 'no-cache' })
+        .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(data){
+          var msgs = (data && data.messages) || [];
+          if (Array.isArray(msgs) && msgs.length) {
+            chatState.lastFetchTs = Math.max.apply(null, msgs.map(function(m){ return m.ts || 0; }).concat(chatState.lastFetchTs));
+          }
+          var added = upsertMessages(msgs);
+          if (isChatPanelOpen()) { renderChatMessages(); markChatRead(); }
+          else if (added > 0) { setChatUnread(true); refreshUnreadExpiry(); }
+          // auto-clear unread if expired (messages would have been GC'd server-side)
+          if (chatState.unread && chatState.unreadExpiry && Date.now() > chatState.unreadExpiry) {
+            setChatUnread(false);
+          }
+          return added;
+        })
+        .catch(function(_e){ return 0; });
+    }
+
+    function startChatPolling() {
+      if (!chatState.apiBase) return;
+      if (chatPollTimer) clearInterval(chatPollTimer);
+      // initial fetch of all recent
+      fetchChatMessages();
+      chatPollTimer = setInterval(fetchChatMessages, 5000);
+    }
+
+    function addChatMessageLocal(message) {
+      var now = Date.now();
+      chatMessages.push({ id: 'local-' + now + '-' + Math.random().toString(36).slice(2,6), text: message, ts: now });
+      gcLocalChat();
+      if (isChatPanelOpen()) renderChatMessages();
+    }
+
     function sendChatMessage() {
       var input = document.getElementById('chatInput');
       if (!input || !input.value.trim()) return;
-      
-      addChatMessage(input.value.trim());
+      var text = input.value.trim();
       input.value = '';
+      if (!chatState.apiBase) { addChatMessageLocal(text); return; }
+      var url = chatState.apiBase.replace(/\/$/, '') + '/messages?room=' + encodeURIComponent(chatState.roomId);
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text }) })
+        .then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(resp){
+          // optimistic: also push locally so it appears immediately
+          var now = Date.now();
+          chatMessages.push({ id: resp && resp.id || ('tmp-' + now), text: text, ts: resp && resp.ts || now });
+          renderChatMessages();
+          refreshUnreadExpiry();
+        })
+        .catch(function(){ addChatMessageLocal(text); });
+    }
+
+    function markChatRead() {
+      setChatUnread(false);
+      if (!chatState.apiBase) return;
+      var url = chatState.apiBase.replace(/\/$/, '') + '/read?room=' + encodeURIComponent(chatState.roomId);
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reader: chatState.readerId }) }).catch(function(){});
     }
 
     // Panel controls
@@ -1195,6 +1321,8 @@
           '<button onclick="sendChatMessage()" style="padding: 8px 16px; background: #ffcc33; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Send</button>' +
           '</div>';
         renderChatMessages();
+        // clear unread state on open and notify API
+        try { markChatRead(); } catch(_e) {}
       } else if (title === 'Resources') {
         contentEl.innerHTML = '<div id="resourcesList" style="max-height: 50vh; overflow-y: auto;"></div>';
         if (resourcesList.length === 0) {
@@ -1657,71 +1785,44 @@
         return;
       }
       
-      // ESC key handling - priority order: close focus mode first, then videos, then modals, then return to main screen
+      // ESC key handling - priority order: close AutoTrader first, then focus mode, then videos, then standard panel, then return
       if (e.key === 'Escape') {
-        // First check if focus mode is active
-        if (focusActive) {
-          exitFocusMode();
-          return;
-        }
-        
-        // Then check if any videos are playing
-        var videoOverlay = document.getElementById('videoOverlay');
-        var ambientVideo = document.getElementById('ambientVideo');
-        var anyVideosPlaying = false;
-        
-        if (videoOverlay && videoOverlay.classList.contains('show')) {
-          anyVideosPlaying = true;
-        }
-        if (ambientVideo && ambientVideo.style.display === 'block') {
-          anyVideosPlaying = true;
-        }
-        
-        if (anyVideosPlaying) {
-          // Close all overlay videos
-          var config = [
-            { id: 'vid-bln' }, { id: 'vid-grn' }, { id: 'lucky-video' }, 
-            { id: 'vid-red' }, { id: 'vid-pme' }
-          ];
-          config.forEach(function(item){ 
-            var v = document.getElementById(item.id); 
-            if (!v) return; 
-            try { v.pause(); } catch(err){} 
-            v.style.display = 'none'; 
-            v.muted = true; 
-          });
-          
-          // Close ambient video (output.webm)
-          if (ambientVideo) {
-            try { ambientVideo.pause(); } catch(err){}
-            ambientVideo.style.display = 'none';
-          }
-          
-          if (videoOverlay) { 
-            videoOverlay.classList.remove('show'); 
-            videoOverlay.setAttribute('aria-hidden','true'); 
-          }
-          return;
-        }
-        
-        // Then check if any modals are open
-        var panelBackdrop = document.getElementById('panelBackdrop');
+        // 1) Close AutoTrader panel first if open
         var autoBackdrop = document.getElementById('autoTraderBackdrop');
-        
-        if (panelBackdrop && panelBackdrop.classList.contains('show')) {
-          closePanel();
-          return;
-        }
         if (autoBackdrop && autoBackdrop.classList.contains('show')) {
           closeAutoTraderPanel();
           return;
         }
-        
-        // If no modals are open and we're in welcome state, return to main screen
-        if (welcomeRevealed) {
-          returnToMainScreen();
+
+        // 2) Close focus preview if active
+        if (focusActive) {
+          exitFocusMode();
           return;
         }
+
+        // 3) Then close any playing videos (overlay or ambient)
+        var videoOverlay = document.getElementById('videoOverlay');
+        var ambientVideo = document.getElementById('ambientVideo');
+        var anyVideosPlaying = false;
+        if (videoOverlay && videoOverlay.classList.contains('show')) anyVideosPlaying = true;
+        if (ambientVideo && ambientVideo.style.display === 'block') anyVideosPlaying = true;
+        if (anyVideosPlaying) {
+          var config = [ { id: 'vid-bln' }, { id: 'vid-grn' }, { id: 'lucky-video' }, { id: 'vid-red' }, { id: 'vid-pme' } ];
+          config.forEach(function(item){ var v = document.getElementById(item.id); if (!v) return; try { v.pause(); } catch(err){} v.style.display = 'none'; v.muted = true; });
+          if (ambientVideo) { try { ambientVideo.pause(); } catch(err){} ambientVideo.style.display = 'none'; }
+          if (videoOverlay) { videoOverlay.classList.remove('show'); videoOverlay.setAttribute('aria-hidden','true'); }
+          return;
+        }
+
+        // 4) Then close standard content panel if open
+        var panelBackdrop = document.getElementById('panelBackdrop');
+        if (panelBackdrop && panelBackdrop.classList.contains('show')) {
+          closePanel();
+          return;
+        }
+
+        // 5) Finally, if in welcome state, return to main screen
+        if (welcomeRevealed) { returnToMainScreen(); return; }
       }
       
       // M key toggles the Music panel open/close
@@ -1791,7 +1892,8 @@
         { id: 'vid-red', btn: 'btn-red' },
         { id: 'vid-pme', btn: 'btn-pme' },
         { id: 'lucky-video', btn: 'aButton' },
-        { id: 'ambientVideo', btn: 'oButton' }
+        { id: 'ambientVideo', btn: 'oButton' },
+        { id: 'ambientVideo', btn: 'lightsButton' }
       ];
       function toggleVideo(targetId) {
         if (!welcomeRevealed) return;
@@ -2058,6 +2160,12 @@
         loadingComplete = true;
         console.log('HempHive initialization complete');
         
+        // Start chat polling if API configured
+        try { startChatPolling(); } catch(_e) {}
+
+        // Start lights button inactivity tracker
+        try { startLightsButtonInactivityTracker(); } catch(_e) {}
+
         
         // Register service worker after initialization
         if ('serviceWorker' in navigator) {
@@ -2082,6 +2190,99 @@
       userInteracted = true;
       initializeAudioContext();
     }, { once: false });
+
+    // Lights button inactivity fade + right-click settings
+    var __lightsInactivity = { timer: null, delayMs: 5000 };
+    function resetLightsButtonInactivityTimer() {
+      var btn = document.getElementById('lightsButton');
+      if (!btn) return;
+      try { btn.classList.remove('lights-faded'); } catch(_e) {}
+      if (__lightsInactivity.timer) clearTimeout(__lightsInactivity.timer);
+      __lightsInactivity.timer = setTimeout(function(){ try { btn.classList.add('lights-faded'); } catch(_e) {} }, __lightsInactivity.delayMs);
+    }
+    function startLightsButtonInactivityTracker() {
+      var btn = document.getElementById('lightsButton');
+      if (!btn) return;
+      var events = ['mousemove','mousedown','touchstart','keydown','wheel'];
+      events.forEach(function(evt){ window.addEventListener(evt, resetLightsButtonInactivityTimer, { passive: true }); });
+      resetLightsButtonInactivityTimer();
+      btn.addEventListener('contextmenu', function(e){ e.preventDefault(); openLightsSettingsPanel(e); });
+    }
+
+    // Settings panel for background selection
+    function ensureLightsSettingsPanel() {
+      var existing = document.getElementById('lightsSettingsPanel');
+      if (existing) return existing;
+      var panel = document.createElement('div');
+      panel.id = 'lightsSettingsPanel';
+      panel.style.cssText = 'position:fixed;left:50%;top:80%;transform:translate(-50%,-50%);min-width:240px;max-width:80vw;background:#0b0b0b;border:1px solid #ffcc33;border-radius:10px;padding:12px;z-index:10002;display:none;box-shadow:0 10px 30px rgba(0,0,0,0.6)';
+      panel.innerHTML = '<div style="color:#ffda4d;font-weight:700;margin-bottom:8px;">Background Settings</div>'+
+        '<label for="bgSelect" style="color:#ccc;font-size:14px;">Select background:</label>'+
+        '<select id="bgSelect" style="width:100%;margin-top:6px;margin-bottom:10px;background:#111;border:1px solid #ffcc33;color:#ffda4d;border-radius:6px;padding:6px;"></select>'+
+        '<div style="display:flex;gap:8px;justify-content:flex-end;">'+
+        '<button id="bgApply" class="ui-btn">Apply</button>'+
+        '<button id="bgCancel" class="ui-btn">Cancel</button>'+
+        '</div>'+
+        '<style>.ui-btn{background:#151515;border:1px solid #ffcc33;color:#ffda4d;padding:6px 12px;border-radius:8px;cursor:pointer;transition:filter 0.2s ease;} .ui-btn:hover{filter:brightness(1.2);}</style>';
+      document.body.appendChild(panel);
+      document.getElementById('bgCancel').onclick = function(){ closeLightsSettingsPanel(); };
+      document.getElementById('bgApply').onclick = function(){
+        var sel = document.getElementById('bgSelect');
+        var file = sel && sel.value ? sel.value : '';
+        if (file) setBackgroundImage('/background/' + file);
+        closeLightsSettingsPanel();
+      };
+      return panel;
+    }
+
+    function openLightsSettingsPanel(e) {
+      var panel = ensureLightsSettingsPanel();
+      populateBackgroundOptions().then(function(){
+        try {
+          var btn = document.getElementById('lightsButton');
+          var rect = btn ? btn.getBoundingClientRect() : null;
+          if (rect) {
+            panel.style.left = Math.round(rect.left + rect.width/2) + 'px';
+            panel.style.top = Math.round(rect.top - 10) + 'px';
+            panel.style.transform = 'translate(-50%,-100%)';
+          }
+        } catch(_e) {}
+        panel.style.display = 'block';
+        setTimeout(function(){
+          function outside(ev){ if (!panel.contains(ev.target)) { closeLightsSettingsPanel(); document.removeEventListener('mousedown', outside); } }
+          document.addEventListener('mousedown', outside);
+        }, 0);
+      });
+    }
+    function closeLightsSettingsPanel() {
+      var panel = document.getElementById('lightsSettingsPanel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    var __bgOptionsLoaded = false;
+    function populateBackgroundOptions() {
+      var sel = document.getElementById('bgSelect');
+      if (!sel) return Promise.resolve();
+      if (__bgOptionsLoaded && sel.options.length) return Promise.resolve();
+      sel.innerHTML = '<option value="">Loading…</option>';
+      function setOptions(list) {
+        sel.innerHTML = '';
+        if (!Array.isArray(list) || !list.length) {
+          var opt = document.createElement('option'); opt.value = ''; opt.textContent = 'No backgrounds found'; sel.appendChild(opt); return;
+        }
+        list.forEach(function(name){ var n = (name||'').toString(); if (!n) return; var opt = document.createElement('option'); opt.value = n; opt.textContent = n; sel.appendChild(opt); });
+        __bgOptionsLoaded = true;
+      }
+      return fetch('/background/backgrounds.json', { cache: 'no-cache' })
+        .then(function(r){ if (!r.ok) throw new Error('http'); return r.json(); })
+        .then(function(arr){ setOptions(arr && arr.files ? arr.files : arr); })
+        .catch(function(){
+          return fetch('/background/backgrounds.txt', { cache: 'no-cache' })
+            .then(function(r){ if (!r.ok) throw new Error('http'); return r.text(); })
+            .then(function(t){ var list = t.split('\n').map(function(s){ return s.trim(); }).filter(function(s){ return !!s; }); setOptions(list); })
+            .catch(function(){ setOptions(['main.png']); });
+        });
+    }
     
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
