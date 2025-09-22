@@ -240,6 +240,14 @@
       fill: rgba(255, 0, 0, 0.18);
     }
 
+    /* Hex highlight (illumination) */
+    .hex-cell.hex-highlight polygon {
+      stroke: #ffcc33 !important;
+      stroke-width: 3 !important;
+      fill: rgba(255, 204, 51, 0.25) !important;
+      filter: drop-shadow(0 0 10px rgba(255,204,51,0.5));
+    }
+
     .hex-button {
       position: absolute;
       width: 120px; /* will be overridden inline for perfect alignment */
@@ -898,7 +906,7 @@
           });
 
           // Preserve ring labels (clockwise from top); no Music in the ring
-          var ringLabels = window.__ringLabels || ['About','Shop','Projects','Chat','Medical','Resources'];
+          var ringLabels = window.__ringLabels || ['About','Shop','Farm','Chat','Medical','Resources'];
           window.__ringLabels = ringLabels.slice();
 
           // Apply labels to the six neighbors
@@ -906,9 +914,27 @@
           neighborOrdered.forEach(function(obj, idx){
             var name = ringLabels[idx] || 'Info';
             var gr = obj.g;
-            gr.addEventListener('click', function(){ openPanel(name); });
-            gr.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel(name); }});
-            gr.addEventListener('contextmenu', function(e){ e.preventDefault(); var t = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : name); });
+            gr.addEventListener('click', function(){ 
+              if (name === 'Farm') { openFarmPanel(); } else { openPanel(name); }
+            });
+            gr.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); if (name === 'Farm') { openFarmPanel(); } else { openPanel(name); } }});
+            gr.addEventListener('contextmenu', function(e){
+              e.preventDefault();
+              var labelNow = (this.querySelector('text') ? (this.querySelector('text').textContent||'') : name);
+              // Special Farm behavior: toggle highlight on hex-r2-c4 and hex-r3-c3
+              if (labelNow === 'Farm') {
+                try {
+                  var cells = Array.prototype.slice.call(document.querySelectorAll('.hex-cell'));
+                  var a = cells.find(function(n){ return n.getAttribute('data-hex-id') === 'hex-r2-c4'; });
+                  var b = cells.find(function(n){ return n.getAttribute('data-hex-id') === 'hex-r3-c3'; });
+                  if (a) a.classList.toggle('hex-highlight');
+                  if (b) b.classList.toggle('hex-highlight');
+                } catch(_e) {}
+                return; // no panel opens
+              }
+              var t = this.querySelector('text');
+              openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : name);
+            });
             var t = gr.querySelector('text'); if (t) { t.textContent = name; }
             labelToGroup[name] = gr;
             if (name === 'Chat') {
@@ -982,12 +1008,12 @@
                 function overrideGroupTo(label, group, clickHandler) {
                   if (!group) return;
                   var t = group.querySelector('text'); if (t) { t.textContent = label; }
-                  group.onclick = function(e){ e.stopImmediatePropagation(); if (clickHandler) clickHandler(); };
+                  group.onclick = function(e){ e.preventDefault(); e.stopPropagation(); if (clickHandler) clickHandler(); };
                   group.onkeydown = function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }};
                 }
                 var shopGr = labelToGroup['Shop'] || null;
                 // Move AutoTrader into Shop position
-                if (shopGr) { overrideGroupTo('AutoTrader', shopGr, openAutoTraderPanel); }
+                if (shopGr) { overrideGroupTo('AutoTrader', shopGr, openAutoTraderPanel); shopGr.addEventListener('contextmenu', function(e){ e.preventDefault(); /* allow info panel default */ }); }
                 // Move Music into original AutoTrader position
                 if (autoTraderGroup) { overrideGroupTo('Music', autoTraderGroup, openMusicPanel); }
                 // Move Chat into original Music position
@@ -1380,10 +1406,24 @@
       var contentEl = document.getElementById('panelContent');
       var desc = __hexDescriptions[hexId] || '';
       titleEl.textContent = 'Hex • ' + (labelText || 'Cell') + ' (' + hexId + ')';
+      var extra = '';
+      if ((labelText||'').toLowerCase() === 'chat') {
+        extra = '<div style="margin-top:12px;">'+
+          '<div style="color:#ccc;margin-bottom:8px;">Webcam stream:</div>'+
+          '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">'+
+          '<button id="chatVideoToggle" class="ui-btn">Connect / Disconnect</button>'+
+          '<button id="chatVideoFs" class="ui-btn">Fullscreen</button>'+
+          '</div>'+
+          '<div style="position:relative;padding-top:56.25%;background:#000;border:1px solid rgba(255,204,51,0.3);border-radius:6px;overflow:hidden;">'+
+          '<iframe id="chatVideo" src="" title="Chat webcam" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:none;"></iframe>'+
+          '</div>'+
+          '</div>';
+      }
       contentEl.innerHTML = '<div style="color:#ccc;margin-bottom:8px;">Identifier:</div>'+
         '<div style="color:#ffda4d;margin-bottom:14px;word-break:break-all;">'+hexId+'</div>'+
         '<div style="color:#ccc;margin-bottom:8px;">Description / Progress:</div>'+
         '<textarea id="hexDesc" style="width:100%;min-height:120px;background:#111;border:1px solid #ffcc33;color:#eee;border-radius:6px;padding:8px;resize:vertical;">'+(desc.replace(/</g,'&lt;'))+'</textarea>'+
+        extra+
         '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
         '<button id="hexSave" class="ui-btn">Save</button>'+
         '</div>'+
@@ -1392,6 +1432,30 @@
       backdrop.setAttribute('aria-hidden','false');
       var save = document.getElementById('hexSave');
       if (save) save.onclick = function(){ var ta = document.getElementById('hexDesc'); if (ta) { __hexDescriptions[hexId] = ta.value || ''; } closePanel(); };
+      // Chat-only webcam controls
+      var toggle = document.getElementById('chatVideoToggle');
+      var fsBtn = document.getElementById('chatVideoFs');
+      var iframe = document.getElementById('chatVideo');
+      if (toggle && iframe) {
+        toggle.onclick = function(){
+          if (iframe.style.display === 'none' || !iframe.src) {
+            iframe.src = 'https://www.youtube.com/embed/-m_nQT62B4Y?autoplay=1&rel=0';
+            iframe.style.display = 'block';
+          } else {
+            try { iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*'); } catch(_e) {}
+            iframe.removeAttribute('src');
+            iframe.style.display = 'none';
+          }
+        };
+      }
+      if (fsBtn && iframe) {
+        fsBtn.onclick = function(){
+          var el = iframe;
+          if (el.requestFullscreen) el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+          else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        };
+      }
     }
     function closePanel() {
       var backdrop = document.getElementById('panelBackdrop');
@@ -1453,6 +1517,32 @@
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
       console.log('AutoTrader panel opened');
+    }
+    function openFarmPanel() {
+      // Similar to AutoTrader, but points to Farm URL
+      console.log('Opening Farm panel...');
+      var focus = document.getElementById('focusOverlay');
+      if (focus) { focus.classList.remove('show'); focus.setAttribute('aria-hidden','true'); }
+      var stdPanel = document.getElementById('panelBackdrop');
+      if (stdPanel) { stdPanel.classList.remove('show'); stdPanel.setAttribute('aria-hidden','true'); }
+      var backdrop = document.getElementById('autoTraderBackdrop');
+      var frame = document.getElementById('autoFrame');
+      if (frame) {
+        try { frame.removeAttribute('src'); frame.style.display = 'none'; } catch(_e){}
+        var loadingDiv = document.createElement('div');
+        loadingDiv.id = 'atbLoading';
+        loadingDiv.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ffda4d;font-size:18px;z-index:10;';
+        loadingDiv.textContent = 'Loading Farm...';
+        frame.parentNode.appendChild(loadingDiv);
+        frame.onload = function(){ var l = document.getElementById('atbLoading'); if (l) l.remove(); frame.style.display = 'block'; };
+        frame.onerror = function(){ var l = document.getElementById('atbLoading'); if (l) { l.textContent = 'Failed to load Farm'; l.style.color = '#ff6b6b'; } };
+        var timestamp = new Date().getTime();
+        frame.src = 'https://mindseye.dev/?t=' + timestamp;
+        frame.style.display = 'block';
+      }
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+      console.log('Farm panel opened');
     }
     function closeAutoTraderPanel() {
       console.log('Closing AutoTrader panel...');
