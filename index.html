@@ -1006,18 +1006,25 @@
               // Swap mapping as requested: AutoTrader -> Shop position; AutoTrader's original -> Music; Music's original -> Chat
               try {
                 function overrideGroupTo(label, group, clickHandler) {
-                  if (!group) return;
-                  var t = group.querySelector('text'); if (t) { t.textContent = label; }
-                  group.onclick = function(e){ e.preventDefault(); e.stopPropagation(); if (clickHandler) clickHandler(); };
-                  group.onkeydown = function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }};
+                  if (!group) return null;
+                  // Replace node to clear prior listeners
+                  var parent = group.parentNode;
+                  var clone = group.cloneNode(true);
+                  if (parent) parent.replaceChild(clone, group);
+                  var t = clone.querySelector('text'); if (t) { t.textContent = label; }
+                  clone.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); });
+                  clone.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }});
+                  // Keep right-click info panel default unless caller overrides later
+                  clone.addEventListener('contextmenu', function(e){ e.preventDefault(); var tx = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : label); });
+                  return clone;
                 }
                 var shopGr = labelToGroup['Shop'] || null;
                 // Move AutoTrader into Shop position
-                if (shopGr) { overrideGroupTo('AutoTrader', shopGr, openAutoTraderPanel); shopGr.addEventListener('contextmenu', function(e){ e.preventDefault(); /* allow info panel default */ }); }
+                if (shopGr) { shopGr = overrideGroupTo('AutoTrader', shopGr, openAutoTraderPanel); }
                 // Move Music into original AutoTrader position
-                if (autoTraderGroup) { overrideGroupTo('Music', autoTraderGroup, openMusicPanel); }
+                if (autoTraderGroup) { autoTraderGroup = overrideGroupTo('Music', autoTraderGroup, openMusicPanel); }
                 // Move Chat into original Music position
-                if (musicGroup) { overrideGroupTo('Chat', musicGroup, function(){ openPanel('Chat'); }); }
+                if (musicGroup) { musicGroup = overrideGroupTo('Chat', musicGroup, function(){ openPanel('Chat'); }); }
               } catch(_e) {}
             }
           } catch(_e) {}
@@ -1557,6 +1564,8 @@
       
       // Hide iframe
       if (frame) {
+        try { frame.src = 'about:blank'; } catch(_e) {}
+        try { frame.removeAttribute('src'); } catch(_e) {}
         frame.style.display = 'none';
       }
       
