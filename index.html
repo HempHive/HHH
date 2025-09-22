@@ -806,6 +806,7 @@
           g.setAttribute('tabindex', '0');
           g.setAttribute('role', 'button');
           g.setAttribute('aria-label', 'Cell '+(r+1)+'-'+(c+1));
+          g.setAttribute('data-hex-id', 'hex-r'+r+'-c'+c);
 
           var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
           poly.setAttribute('points', hexPoints(cx, cy));
@@ -830,6 +831,16 @@
           });
           // Default cells do nothing for now
           g.addEventListener('click', function(e){});
+          // Right-click opens info panel with ID + description
+          g.addEventListener('contextmenu', function(e){
+            e.preventDefault();
+            try {
+              var id = this.getAttribute('data-hex-id') || 'unknown';
+              var t = this.querySelector('text');
+              var labelTxt = t ? (t.textContent || '') : '';
+              openHexInfoPanel(id, labelTxt);
+            } catch(_e) {}
+          });
 
           svg.appendChild(g);
           x += xStep;
@@ -897,6 +908,7 @@
             var gr = obj.g;
             gr.addEventListener('click', function(){ openPanel(name); });
             gr.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel(name); }});
+            gr.addEventListener('contextmenu', function(e){ e.preventDefault(); var t = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : name); });
             var t = gr.querySelector('text'); if (t) { t.textContent = name; }
             labelToGroup[name] = gr;
             if (name === 'Chat') {
@@ -922,12 +934,13 @@
             var dx = o.x - targetX; var dy = o.y - targetY; var d = dx*dx + dy*dy;
             if (d < bestD) { bestD = d; best = o; }
           });
+          var musicGroup = null;
           if (best && best.g) {
-            var music = best.g; music.classList.add('music');
-            music.addEventListener('click', function(){ openMusicPanel(); });
-            music.addEventListener('contextmenu', function(e){ e.preventDefault(); toggleMusic(); });
-            music.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openMusicPanel(); }});
-            var mt = music.querySelector('text'); if (mt) { mt.textContent = 'Music'; }
+            musicGroup = best.g; musicGroup.classList.add('music');
+            musicGroup.addEventListener('click', function(){ openMusicPanel(); });
+            musicGroup.addEventListener('contextmenu', function(e){ e.preventDefault(); var t = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : 'Music'); });
+            musicGroup.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openMusicPanel(); }});
+            var mt = musicGroup.querySelector('text'); if (mt) { mt.textContent = 'Music'; }
           }
 
           // Add an extra labeled hex for AutoTrader below Resources and About
@@ -952,14 +965,34 @@
                 var d = dx*dx + dy*dy;
                 if (d < bestAutoD) { bestAutoD = d; bestAuto = entry.g; }
               });
+              var autoTraderGroup = null;
               if (bestAuto) {
-                var polyAuto = bestAuto.querySelector('polygon');
+                autoTraderGroup = bestAuto;
+                var polyAuto = autoTraderGroup.querySelector('polygon');
                 polyAuto.setAttribute('stroke', '#ffd24d');
                 polyAuto.setAttribute('stroke-width', '2');
-                var tAuto = bestAuto.querySelector('text'); if (tAuto) { tAuto.textContent = 'AutoTrader'; }
-                bestAuto.addEventListener('click', function(){ openPanel('AutoTrader'); });
-                bestAuto.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel('AutoTrader'); }});
+                var tAuto = autoTraderGroup.querySelector('text'); if (tAuto) { tAuto.textContent = 'AutoTrader'; }
+                autoTraderGroup.addEventListener('click', function(){ openAutoTraderPanel(); });
+                autoTraderGroup.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openAutoTraderPanel(); }});
+                autoTraderGroup.addEventListener('contextmenu', function(e){ e.preventDefault(); var t = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : 'AutoTrader'); });
               }
+
+              // Swap mapping as requested: AutoTrader -> Shop position; AutoTrader's original -> Music; Music's original -> Chat
+              try {
+                function overrideGroupTo(label, group, clickHandler) {
+                  if (!group) return;
+                  var t = group.querySelector('text'); if (t) { t.textContent = label; }
+                  group.onclick = function(e){ e.stopImmediatePropagation(); if (clickHandler) clickHandler(); };
+                  group.onkeydown = function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }};
+                }
+                var shopGr = labelToGroup['Shop'] || null;
+                // Move AutoTrader into Shop position
+                if (shopGr) { overrideGroupTo('AutoTrader', shopGr, openAutoTraderPanel); }
+                // Move Music into original AutoTrader position
+                if (autoTraderGroup) { overrideGroupTo('Music', autoTraderGroup, openMusicPanel); }
+                // Move Chat into original Music position
+                if (musicGroup) { overrideGroupTo('Chat', musicGroup, function(){ openPanel('Chat'); }); }
+              } catch(_e) {}
             }
           } catch(_e) {}
         }
@@ -1337,6 +1370,28 @@
       }
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
+    }
+
+    // Generic hex info panel with identifier and description
+    var __hexDescriptions = Object.create(null);
+    function openHexInfoPanel(hexId, labelText) {
+      var backdrop = document.getElementById('panelBackdrop');
+      var titleEl = document.getElementById('panelTitle');
+      var contentEl = document.getElementById('panelContent');
+      var desc = __hexDescriptions[hexId] || '';
+      titleEl.textContent = 'Hex • ' + (labelText || 'Cell') + ' (' + hexId + ')';
+      contentEl.innerHTML = '<div style="color:#ccc;margin-bottom:8px;">Identifier:</div>'+
+        '<div style="color:#ffda4d;margin-bottom:14px;word-break:break-all;">'+hexId+'</div>'+
+        '<div style="color:#ccc;margin-bottom:8px;">Description / Progress:</div>'+
+        '<textarea id="hexDesc" style="width:100%;min-height:120px;background:#111;border:1px solid #ffcc33;color:#eee;border-radius:6px;padding:8px;resize:vertical;">'+(desc.replace(/</g,'&lt;'))+'</textarea>'+
+        '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">'+
+        '<button id="hexSave" class="ui-btn">Save</button>'+
+        '</div>'+
+        '<style>.ui-btn{background:#151515;border:1px solid #ffcc33;color:#ffda4d;padding:6px 12px;border-radius:8px;cursor:pointer;transition:filter 0.2s ease;} .ui-btn:hover{filter:brightness(1.2);}</style>';
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+      var save = document.getElementById('hexSave');
+      if (save) save.onclick = function(){ var ta = document.getElementById('hexDesc'); if (ta) { __hexDescriptions[hexId] = ta.value || ''; } closePanel(); };
     }
     function closePanel() {
       var backdrop = document.getElementById('panelBackdrop');
