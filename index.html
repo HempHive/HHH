@@ -1547,6 +1547,19 @@
     }
     function closePanel() {
       var backdrop = document.getElementById('panelBackdrop');
+      // Stop Chat panel video if playing
+      try {
+        var titleEl = document.getElementById('panelTitle');
+        if (titleEl && titleEl.textContent === 'Chat') {
+          var iframe = document.getElementById('chatPanelVideo');
+          if (iframe) {
+            try { iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*'); } catch(_e) {}
+            try { iframe.src = 'about:blank'; } catch(_e) {}
+            try { iframe.removeAttribute('src'); } catch(_e) {}
+            iframe.style.display = 'none';
+          }
+        }
+      } catch(_e) {}
       backdrop.classList.remove('show');
       backdrop.setAttribute('aria-hidden','true');
     }
