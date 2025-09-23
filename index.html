@@ -1500,7 +1500,7 @@
             el.addEventListener('click', function(){
               var title = this.getAttribute('data-title') || '';
               if (!title) return;
-              var path = '/Stories/' + title + '.txt';
+              var path = '/Stories/' + encodeURIComponent(title) + '.txt';
               fetch(path, { cache: 'no-cache' }).then(function(r){
                 if (!r.ok) throw new Error('HTTP '+r.status);
                 return r.text();
@@ -1510,7 +1510,14 @@
                 var ct = document.getElementById('panelContent');
                 if (tl) tl.textContent = title;
                 if (ct) {
-                  ct.innerHTML = '<div style="white-space:pre-wrap;color:#ddd;">'+(text.replace(/</g,'&lt;'))+'</div>';
+                  var safe = (text || '').replace(/</g,'&lt;');
+                  ct.innerHTML = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'+
+                                  '<button id="storiesBack" class="ui-btn">Back to Stories</button></div>'+
+                                  '<div style="white-space:pre-wrap;color:#ddd;">'+ safe +'</div>'+
+                                  '<style>.ui-btn{background:#151515;border:1px solid #ffcc33;color:#ffda4d;padding:6px 12px;border-radius:8px;cursor:pointer;transition:filter 0.2s ease;} .ui-btn:hover{filter:brightness(1.2);}</style>';
+                  var backBtn = document.getElementById('storiesBack');
+                  if (backBtn) backBtn.onclick = function(){ openPanel('Stories'); };
+                  try { ct.scrollTop = 0; } catch(_e) {}
                 }
                 if (bd) { bd.classList.add('show'); bd.setAttribute('aria-hidden','false'); }
               }).catch(function(){ /* no txt exists -> do nothing */ });
