@@ -1025,35 +1025,35 @@
                 if (autoTraderGroup) { autoTraderGroup = overrideGroupTo('Music', autoTraderGroup, openMusicPanel); }
                 // (Removed) moving Chat into original Music position to avoid duplicate Chat buttons
 
-                // Additionally, set specific ARC mapping: hex-r4-c7 -> label "ARC" + openArcPanel
+                // Additionally, set specific ARC mapping: hex-r4-c4 -> label "ARC" + openArcPanel
                 try {
                   var allCells = Array.prototype.slice.call(document.querySelectorAll('.hex-cell'));
-                  var arcCell = allCells.find(function(n){ return n.getAttribute('data-hex-id') === 'hex-r4-c7'; });
+                  var arcCell = allCells.find(function(n){ return n.getAttribute('data-hex-id') === 'hex-r4-c4'; });
                   if (arcCell) {
                     // Replace node to avoid existing listeners
                     var parent = arcCell.parentNode; var clone = arcCell.cloneNode(true); if (parent) parent.replaceChild(clone, arcCell);
                     var txt = clone.querySelector('text'); if (txt) { txt.textContent = 'ARC'; }
                     clone.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); openArcPanel(); });
                     clone.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); openArcPanel(); }});
-                    clone.addEventListener('contextmenu', function(e){ e.preventDefault(); openHexInfoPanel('hex-r4-c7', 'ARC'); });
+                    clone.addEventListener('contextmenu', function(e){ e.preventDefault(); openHexInfoPanel('hex-r4-c4', 'ARC'); });
                   }
                 } catch(_e) {}
 
-                // Enforce single Chat at hex-r3-c6 and clear duplicates
+                // Enforce single Chat at hex-r3-c3 and clear duplicates
                 try {
                   var cellsAll = Array.prototype.slice.call(document.querySelectorAll('.hex-cell'));
-                  var chatCell = cellsAll.find(function(n){ return n.getAttribute('data-hex-id') === 'hex-r3-c6'; });
+                  var chatCell = cellsAll.find(function(n){ return n.getAttribute('data-hex-id') === 'hex-r3-c3'; });
                   if (chatCell) {
                     var p2 = chatCell.parentNode; var cl2 = chatCell.cloneNode(true); if (p2) p2.replaceChild(cl2, chatCell);
                     var tx2 = cl2.querySelector('text'); if (tx2) { tx2.textContent = 'Chat'; }
                     cl2.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); openPanel('Chat'); });
                     cl2.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); openPanel('Chat'); }});
-                    cl2.addEventListener('contextmenu', function(e){ e.preventDefault(); openHexInfoPanel('hex-r3-c6', 'Chat'); });
+                    cl2.addEventListener('contextmenu', function(e){ e.preventDefault(); openHexInfoPanel('hex-r3-c3', 'Chat'); });
                     try { window.__chatGroup = cl2; } catch(_e) {}
                   }
                   // Clear any other Chat labels
                   cellsAll.forEach(function(n){
-                    if ((n.getAttribute('data-hex-id')||'') !== 'hex-r3-c6') {
+                    if ((n.getAttribute('data-hex-id')||'') !== 'hex-r3-c3') {
                       var tnode = n.querySelector('text');
                       if (tnode && (tnode.textContent||'') === 'Chat') {
                         tnode.textContent = 'Info';
