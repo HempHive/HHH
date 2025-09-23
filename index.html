@@ -1484,13 +1484,39 @@
         var html = '<div style="display:flex;flex-direction:column;gap:12px;">';
         for (var i=0;i<stories.length;i++) {
           var s = stories[i];
-          html += '<div style="padding:12px;border:1px solid rgba(255,204,51,0.35);border-radius:8px;background:rgba(255,204,51,0.05);">'+
+          var sid = 'story-'+s.replace(/\s+/g,'-');
+          html += '<div id="'+sid+'" data-title="'+s+'" class="story-item" style="padding:12px;border:1px solid rgba(255,204,51,0.35);border-radius:8px;background:rgba(255,204,51,0.05);cursor:pointer;">'+
                   '<div style="color:#ffda4d;font-weight:700;">'+s+'</div>'+
                   '<div style="color:#ccc;font-size:14px;margin-top:4px;">Description</div>'+
                   '</div>';
         }
-        html += '</div>';
+        html += '</div>'+
+          '<style>.story-item:hover{background:rgba(255,204,51,0.08);}</style>';
         contentEl.innerHTML = html;
+        // Wire story clicks to try loading /Stories/<Title>.txt
+        try {
+          var items = Array.prototype.slice.call(contentEl.querySelectorAll('.story-item'));
+          items.forEach(function(el){
+            el.addEventListener('click', function(){
+              var title = this.getAttribute('data-title') || '';
+              if (!title) return;
+              var path = '/Stories/' + title + '.txt';
+              fetch(path, { cache: 'no-cache' }).then(function(r){
+                if (!r.ok) throw new Error('HTTP '+r.status);
+                return r.text();
+              }).then(function(text){
+                var bd = document.getElementById('panelBackdrop');
+                var tl = document.getElementById('panelTitle');
+                var ct = document.getElementById('panelContent');
+                if (tl) tl.textContent = title;
+                if (ct) {
+                  ct.innerHTML = '<div style="white-space:pre-wrap;color:#ddd;">'+(text.replace(/</g,'&lt;'))+'</div>';
+                }
+                if (bd) { bd.classList.add('show'); bd.setAttribute('aria-hidden','false'); }
+              }).catch(function(){ /* no txt exists -> do nothing */ });
+            });
+          });
+        } catch(_e) {}
       } else {
         contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover Stories, Shop, Farm, Chat, Medical, and Resources.</p>' : ('<p>'+title+' content coming soon…</p>');
       }
@@ -1978,13 +2004,26 @@
       }
     }
 
+    function enforceMusicClass() {
+      try {
+        var cells = Array.prototype.slice.call(document.querySelectorAll('.hex-cell'));
+        cells.forEach(function(g){
+          try {
+            var t = g.querySelector('text');
+            var label = t ? (t.textContent || '').trim() : '';
+            if (label === 'Music') g.classList.add('music'); else g.classList.remove('music');
+          } catch(_e) {}
+        });
+      } catch(_e) {}
+    }
+
     function setMusicPlaying(isPlaying) {
-      var cell = document.querySelector('.hex-cell.music');
-      if (!cell) return;
+      enforceMusicClass();
+      var all = Array.prototype.slice.call(document.querySelectorAll('.hex-cell'));
+      all.forEach(function(g){ g.classList.remove('playing'); });
       if (isPlaying) {
-        cell.classList.add('playing');
-      } else {
-        cell.classList.remove('playing');
+        var target = all.find(function(g){ var t = g.querySelector('text'); return t && (t.textContent||'').trim() === 'Music'; });
+        if (target) target.classList.add('playing');
       }
     }
 
