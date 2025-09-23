@@ -1500,11 +1500,8 @@
             el.addEventListener('click', function(){
               var title = this.getAttribute('data-title') || '';
               if (!title) return;
-              var path = '/Stories/' + encodeURIComponent(title) + '.txt';
-              fetch(path, { cache: 'no-cache' }).then(function(r){
-                if (!r.ok) throw new Error('HTTP '+r.status);
-                return r.text();
-              }).then(function(text){
+              var candidates = ['/' + encodeURIComponent(title) + '.txt', '/Stories/' + encodeURIComponent(title) + '.txt'];
+              function openText(text){
                 var bd = document.getElementById('panelBackdrop');
                 var tl = document.getElementById('panelTitle');
                 var ct = document.getElementById('panelContent');
@@ -1520,7 +1517,14 @@
                   try { ct.scrollTop = 0; } catch(_e) {}
                 }
                 if (bd) { bd.classList.add('show'); bd.setAttribute('aria-hidden','false'); }
-              }).catch(function(){ /* no txt exists -> do nothing */ });
+              }
+              (function tryNext(i){
+                if (i >= candidates.length) { return; }
+                fetch(candidates[i], { cache: 'no-cache' }).then(function(r){
+                  if (!r.ok) throw new Error('HTTP '+r.status);
+                  return r.text();
+                }).then(openText).catch(function(){ tryNext(i+1); });
+              })(0);
             });
           });
         } catch(_e) {}
