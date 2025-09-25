@@ -521,6 +521,62 @@
       position: relative;
       overflow: hidden;
     }
+
+    /* Suggestions portrait panel */
+    .suggestions-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10007;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .suggestions-backdrop.show { opacity: 1; pointer-events: auto; }
+    .suggestions-panel {
+      height: 90vh;
+      width: calc(90vh * 10.71 / 16);
+      max-width: 92vw;
+      background: #0b0b0b;
+      border: 1px solid #ffcc33;
+      border-radius: 12px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6), 0 0 30px rgba(255, 204, 51, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    #suggestionsFrame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #111;
+      pointer-events: none; /* iframe not clickable */
+    }
+    .suggestions-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid #ffcc33;
+      background: #141414;
+      color: #ffda4d;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: filter 0.2s ease;
+      z-index: 2;
+      pointer-events: auto; /* only close button is clickable */
+    }
+    .suggestions-close:hover { filter: brightness(1.2); }
     .auto-panel iframe {
       width: 100%;
       height: 100%;
@@ -629,6 +685,14 @@
     <div class="auto-panel">
       <button id="autoClose" class="auto-close" aria-label="Close">✕</button>
       <iframe id="autoFrame" src="" title="AutoTrader" allow="fullscreen; autoplay; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe>
+    </div>
+  </div>
+
+  <!-- Suggestions portrait panel -->
+  <div id="suggestionsBackdrop" class="suggestions-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="suggestions-panel">
+      <button id="suggestionsClose" class="suggestions-close" aria-label="Close">✕</button>
+      <iframe id="suggestionsFrame" src="" title="Suggestions" referrerpolicy="no-referrer"></iframe>
     </div>
   </div>
 
@@ -906,7 +970,8 @@
           });
 
           // Preserve ring labels (clockwise from top); avoid Info/Chat/Music labels in ring
-          var ringLabels = window.__ringLabels || ['Stories','Shop','Farm','Medical','Resources','Resources'];
+          // Update: Move 'Resources' into the former 'Medical' position, replace original 'Resources' with 'Suggestions'
+          var ringLabels = window.__ringLabels || ['Stories','Shop','Farm','Suggestions','Resources','Resources'];
           window.__ringLabels = ringLabels.slice();
 
           // Apply labels to the six neighbors
@@ -1054,6 +1119,31 @@
                       cl.addEventListener('contextmenu', function(e){ e.preventDefault(); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown','Info'); });
                     }
                   });
+                } catch(_e) {}
+
+                // After ARC placement, swap the existing 'Suggestions' and 'Resources' cells without moving ARC
+                try {
+                  var all = Array.prototype.slice.call(document.querySelectorAll('.hex-cell'));
+                  function findByLabel(lbl) {
+                    return all.find(function(n){ var t = n.querySelector('text'); return t && (t.textContent||'').trim() === lbl; });
+                  }
+                  var resCell = findByLabel('Resources');
+                  var sugCell = findByLabel('Suggestions');
+                  if (resCell && sugCell) {
+                    function rewireCell(group, label, clickHandler) {
+                      var parent = group.parentNode;
+                      var clone = group.cloneNode(true);
+                      if (parent) parent.replaceChild(clone, group);
+                      var t = clone.querySelector('text'); if (t) { t.textContent = label; }
+                      clone.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); });
+                      clone.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }});
+                      clone.addEventListener('contextmenu', function(e){ e.preventDefault(); var tx = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : label); });
+                      return clone;
+                    }
+                    // Perform swap: Resources -> Suggestions, Suggestions -> Resources
+                    resCell = rewireCell(resCell, 'Suggestions', function(){ openSuggestionsPanel(); });
+                    sugCell = rewireCell(sugCell, 'Resources', function(){ openPanel('Resources'); });
+                  }
                 } catch(_e) {}
               } catch(_e) {}
             }
@@ -1405,6 +1495,7 @@
     function openPanel(title) {
       if (title === 'Welcome') { triggerWelcomeReveal(); return; }
       if (title === 'AutoTrader') { openAutoTraderPanel(); return; }
+      if (title === 'Suggestions') { openSuggestionsPanel(); return; }
       var backdrop = document.getElementById('panelBackdrop');
       var titleEl = document.getElementById('panelTitle');
       var contentEl = document.getElementById('panelContent');
@@ -1518,7 +1609,7 @@
           });
         } catch(_e) {}
       } else {
-        contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover Stories, Shop, Farm, Chat, Medical, and Resources.</p>' : ('<p>'+title+' content coming soon…</p>');
+        contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover Stories, Shop, Farm, Chat, Resources, and Suggestions.</p>' : ('<p>'+title+' content coming soon…</p>');
       }
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
@@ -1724,6 +1815,67 @@
       if (ac) ac.addEventListener('click', closeAutoTraderPanel);
       if (ab) ab.addEventListener('click', function(e){ if (e.target.id === 'autoTraderBackdrop') closeAutoTraderPanel(); });
       window.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAutoTraderPanel(); });
+    })();
+
+    // Suggestions panel controls
+    var suggestionsTimer = null;
+    var suggestionsInteractive = false;
+    function openSuggestionsPanel() {
+      console.log('Opening Suggestions panel...');
+      var focus = document.getElementById('focusOverlay');
+      if (focus) { focus.classList.remove('show'); focus.setAttribute('aria-hidden','true'); }
+      var stdPanel = document.getElementById('panelBackdrop');
+      if (stdPanel) { stdPanel.classList.remove('show'); stdPanel.setAttribute('aria-hidden','true'); }
+      var backdrop = document.getElementById('suggestionsBackdrop');
+      var frame = document.getElementById('suggestionsFrame');
+      if (frame) {
+        try { frame.removeAttribute('src'); frame.style.display = 'none'; } catch(_e){}
+        var timestamp = new Date().getTime();
+        frame.src = 'https://jannerap.github.io/Trailers/?t=' + timestamp;
+        frame.style.display = 'block';
+        suggestionsInteractive = false;
+        frame.style.pointerEvents = 'none';
+      }
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+      // Auto-close after 5 minutes and 30 seconds (330000 ms)
+      if (suggestionsTimer) { clearTimeout(suggestionsTimer); }
+      suggestionsTimer = setTimeout(closeSuggestionsPanel, 330000);
+    }
+    function closeSuggestionsPanel() {
+      console.log('Closing Suggestions panel...');
+      var backdrop = document.getElementById('suggestionsBackdrop');
+      var frame = document.getElementById('suggestionsFrame');
+      if (suggestionsTimer) { clearTimeout(suggestionsTimer); suggestionsTimer = null; }
+      suggestionsInteractive = false;
+      if (frame) {
+        try { frame.src = 'about:blank'; } catch(_e) {}
+        try { frame.removeAttribute('src'); } catch(_e) {}
+        frame.style.display = 'none';
+        frame.style.pointerEvents = 'none';
+      }
+      if (backdrop) {
+        backdrop.classList.remove('show');
+        backdrop.setAttribute('aria-hidden','true');
+      }
+    }
+    (function(){
+      var sc = document.getElementById('suggestionsClose');
+      var sb = document.getElementById('suggestionsBackdrop');
+      if (sc) sc.addEventListener('click', closeSuggestionsPanel);
+      if (sb) sb.addEventListener('click', function(e){ if (e.target.id === 'suggestionsBackdrop') closeSuggestionsPanel(); });
+      window.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') { closeSuggestionsPanel(); return; }
+        if (e.key === 't' || e.key === 'T') {
+          // Toggle iframe clickability only when Suggestions panel is open
+          var bd = document.getElementById('suggestionsBackdrop');
+          if (bd && bd.classList.contains('show')) {
+            suggestionsInteractive = !suggestionsInteractive;
+            var f = document.getElementById('suggestionsFrame');
+            if (f) f.style.pointerEvents = suggestionsInteractive ? 'auto' : 'none';
+          }
+        }
+      });
     })();
 
     // Music panel & player
@@ -2066,12 +2218,7 @@
         return;
       }
       
-      // T key - AutoTrader panel toggle
-      if (e.key === 't' || e.key === 'T') {
-        e.preventDefault();
-        toggleAutoTraderPanel();
-        return;
-      }
+      // T key is reserved for Suggestions interactivity toggle only (handled elsewhere)
       
       // O key - Ambient video toggle
       if (e.key === 'o' || e.key === 'O') {
