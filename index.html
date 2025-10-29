@@ -69,6 +69,8 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
+      // Re-apply saved hex border color after rebuild
+      try { var __savedHex = localStorage.getItem('hexBorderColor'); if (__savedHex) applyHexBorderColor(__savedHex); } catch(_e) {}
     }
 
     @keyframes bgFade {
@@ -741,6 +743,16 @@
     window.addEventListener('error', function(e) {
       // Silent error handling
     });
+    
+    // Apply persisted style settings and wire Welcome context menu
+    (function(){
+      try { var c = localStorage.getItem('hexBorderColor'); if (c) applyHexBorderColor(c); } catch(_e) {}
+      try { var f = localStorage.getItem('siteFont'); if (f) loadSelectedFont(f); } catch(_e) {}
+      try {
+        var wb = document.getElementById('wButton');
+        if (wb) wb.addEventListener('contextmenu', function(e){ e.preventDefault(); e.stopPropagation(); openStylePanel(); });
+      } catch(_e) {}
+    })();
     // Layout config for overlay videos and buttons (tweak here for trial-and-error)
     var mediaLayout = window.mediaLayout || {
       sizeMultiplierVideos: 2,
@@ -1001,7 +1013,7 @@
               var t = this.querySelector('text');
               openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : name);
             });
-            var t = gr.querySelector('text'); if (t) { t.textContent = name; }
+            var t = gr.querySelector('text'); if (t) { t.textContent = (name === 'Chat' ? 'Chats' : name); }
             labelToGroup[name] = gr;
             if (name === 'Chat') {
               try { window.__chatGroup = gr; } catch(_e) {}
@@ -1016,6 +1028,7 @@
           });
           center.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openPanel('Welcome'); }});
           var ct = center.querySelector('text'); if (ct) { ct.textContent = 'Welcome'; }
+          center.addEventListener('contextmenu', function(e){ e.preventDefault(); e.stopPropagation(); try { openStylePanel(); } catch(_e) {} });
 
           // MUSIC: select the hex one row above the top neighbor (two steps above center)
           var targetX = centerCent.x;
@@ -1077,11 +1090,12 @@
                   var parent = group.parentNode;
                   var clone = group.cloneNode(true);
                   if (parent) parent.replaceChild(clone, group);
-                  var t = clone.querySelector('text'); if (t) { t.textContent = label; }
+                  var displayLabel = (label === 'Chat' ? 'Chats' : label);
+                  var t = clone.querySelector('text'); if (t) { t.textContent = displayLabel; }
                   clone.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); });
                   clone.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }});
                   // Keep right-click info panel default unless caller overrides later
-                  clone.addEventListener('contextmenu', function(e){ e.preventDefault(); var tx = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : label); });
+                  clone.addEventListener('contextmenu', function(e){ e.preventDefault(); var tx = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : displayLabel); });
                   return clone;
                 }
                 var shopGr = labelToGroup['Shop'] || null;
@@ -1382,7 +1396,7 @@
     function isChatPanelOpen() {
       var titleEl = document.getElementById('panelTitle');
       var backdrop = document.getElementById('panelBackdrop');
-      return !!(backdrop && backdrop.classList.contains('show') && titleEl && titleEl.textContent === 'Chat');
+      return !!(backdrop && backdrop.classList.contains('show') && titleEl && (titleEl.textContent === 'Chat' || titleEl.textContent === 'Chats'));
     }
 
     function setChatUnread(flag) {
@@ -1502,14 +1516,16 @@
       titleEl.textContent = title;
       
       if (title === 'Chat') {
+        try { titleEl.textContent = 'Chats'; } catch(_e) {}
         contentEl.innerHTML =
           // Video controls section
           '<div style="margin-bottom:12px;">' +
             '<div style="color:#ccc;margin-bottom:8px;">Webcam stream:</div>'+
-            '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
-              '<button id="chatPanelVideoToggle" class="ui-btn">Connect / Disconnect</button>' +
-              '<button id="chatPanelVideoFs" class="ui-btn">Fullscreen</button>' +
-            '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
+            '<button id="chatPanelVideoToggle" class="ui-btn">Connect / Disconnect</button>' +
+            '<button id="chatPanelVideoFs" class="ui-btn">Fullscreen</button>' +
+            '<button id="chatPanelVideo24x7" class="ui-btn">🎭24/7😽</button>' +
+          '</div>' +
             '<div style="position:relative;padding-top:56.25%;background:#000;border:1px solid rgba(255,204,51,0.3);border-radius:6px;overflow:hidden;">' +
               '<iframe id="chatPanelVideo" src="" title="Chat webcam" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;display:none;"></iframe>' +
             '</div>' +
@@ -1545,6 +1561,13 @@
               if (el.requestFullscreen) el.requestFullscreen();
               else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
               else if (el.msRequestFullscreen) el.msRequestFullscreen();
+            };
+          }
+          var customBtn = document.getElementById('chatPanelVideo24x7');
+          if (customBtn && iframe) {
+            customBtn.onclick = function(){
+              iframe.src = 'https://www.youtube.com/embed/36YnV9STBqc?autoplay=1&rel=0';
+              iframe.style.display = 'block';
             };
           }
         } catch(_e) {}
@@ -1609,7 +1632,7 @@
           });
         } catch(_e) {}
       } else {
-        contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover Stories, Shop, Farm, Chat, Resources, and Suggestions.</p>' : ('<p>'+title+' content coming soon…</p>');
+        contentEl.innerHTML = title === 'Welcome' ? '<p>Welcome to HempHive. Explore the comb to discover Stories, Shop, Farm, Chats, Resources, and Suggestions.</p>' : ('<p>'+title+' content coming soon…</p>');
       }
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
@@ -1667,7 +1690,7 @@
       // Stop Chat panel video if playing
       try {
         var titleEl = document.getElementById('panelTitle');
-        if (titleEl && titleEl.textContent === 'Chat') {
+        if (titleEl && (titleEl.textContent === 'Chat' || titleEl.textContent === 'Chats')) {
           var iframe = document.getElementById('chatPanelVideo');
           if (iframe) {
             try { iframe.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*'); } catch(_e) {}
@@ -1683,6 +1706,157 @@
     document.getElementById('panelClose').addEventListener('click', closePanel);
     document.getElementById('panelBackdrop').addEventListener('click', function(e){ if (e.target.id === 'panelBackdrop') closePanel(); });
     window.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePanel(); });
+
+    // Style Panel and theming helpers
+    function ensureDynamicHexThemeStyle() {
+      var style = document.getElementById('dynamicHexThemeStyle');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'dynamicHexThemeStyle';
+        document.head.appendChild(style);
+      }
+      return style;
+    }
+
+    function rgbaFromHex(hex, alpha) {
+      try {
+        var h = hex.replace('#','');
+        if (h.length === 3) { h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; }
+        var r = parseInt(h.slice(0,2),16);
+        var g = parseInt(h.slice(2,4),16);
+        var b = parseInt(h.slice(4,6),16);
+        return 'rgba(' + r + ',' + g + ',' + b + ',' + (alpha==null?1:alpha) + ')';
+      } catch(_e) {
+        return 'rgba(255,204,51,' + (alpha==null?1:alpha) + ')';
+      }
+    }
+
+    function applyHexBorderColor(hexColor) {
+      try { localStorage.setItem('hexBorderColor', hexColor); } catch(_e) {}
+      // Update all hex polygon strokes
+      try {
+        var polys = Array.prototype.slice.call(document.querySelectorAll('#honeycombSvg g.hex-cell polygon'));
+        polys.forEach(function(p){ p.setAttribute('stroke', hexColor); });
+      } catch(_e) {}
+      // Update hover/label accent styles dynamically
+      try {
+        var style = ensureDynamicHexThemeStyle();
+        var shadow = rgbaFromHex(hexColor, 0.35);
+        var hiFill = rgbaFromHex(hexColor, 0.25);
+        var hiShadow = rgbaFromHex(hexColor, 0.5);
+        style.textContent =
+          '.hex-cell:hover polygon{stroke:'+hexColor+';filter:drop-shadow(0 0 6px '+shadow+');}'+
+          '.cell-label{fill:'+hexColor+';}'+
+          '.hex-cell.hex-highlight polygon{stroke:'+hexColor+' !important;fill:'+hiFill+' !important;filter:drop-shadow(0 0 10px '+hiShadow+');}'+
+          '.panel{border-color:'+hexColor+';box-shadow:0 10px 40px rgba(0,0,0,0.6),0 0 30px '+shadow+';}'+
+          '.hex-button.circle-btn.show-label{border-color:'+hexColor+';}';
+      } catch(_e) {}
+    }
+
+    function loadSelectedFont(fontName) {
+      try { localStorage.setItem('siteFont', fontName); } catch(_e) {}
+      try {
+        var id = 'fontLoaderLink';
+        var link = document.getElementById(id);
+        var family = fontName.replace(/\s+/g,'+');
+        var href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family) + ':wght@400;600;700&display=swap';
+        if (!link) { link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'; document.head.appendChild(link); }
+        link.href = href;
+      } catch(_e) {}
+      try { document.body.style.fontFamily = '\'' + fontName + '\', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif'; } catch(_e) {}
+    }
+
+    function resetStyleSettings() {
+      try { localStorage.removeItem('hexBorderColor'); } catch(_e) {}
+      try { localStorage.removeItem('siteFont'); } catch(_e) {}
+      try {
+        var style = document.getElementById('dynamicHexThemeStyle');
+        if (style && style.parentNode) style.parentNode.removeChild(style);
+      } catch(_e) {}
+      try {
+        var link = document.getElementById('fontLoaderLink');
+        if (link && link.parentNode) link.parentNode.removeChild(link);
+      } catch(_e) {}
+      try { document.body.style.fontFamily = ''; } catch(_e) {}
+      try {
+        // Rebuild honeycomb to restore default strokes and highlights
+        buildHoneycomb();
+      } catch(_e) {}
+      try {
+        var picker = document.getElementById('hexColorPicker');
+        if (picker) picker.value = '#ffcc33';
+        var sel = document.getElementById('fontSelect');
+        if (sel) sel.value = 'Inter';
+      } catch(_e) {}
+    }
+
+    function openStylePanel() {
+      var backdrop = document.getElementById('panelBackdrop');
+      var titleEl = document.getElementById('panelTitle');
+      var contentEl = document.getElementById('panelContent');
+      if (!backdrop || !titleEl || !contentEl) return;
+      titleEl.textContent = 'Style';
+
+      var savedColor = (function(){ try { return localStorage.getItem('hexBorderColor') || '#ffcc33'; } catch(_e) { return '#ffcc33'; } })();
+      var savedFont = (function(){ try { return localStorage.getItem('siteFont') || 'Inter'; } catch(_e) { return 'Inter'; } })();
+      var fonts = ['Inter','Roboto','Open Sans','Lato','Montserrat','Poppins','Merriweather','Playfair Display','Oswald','Raleway','Source Sans 3','Nunito','Noto Sans','Inconsolata','Fira Sans','Fira Code','PT Sans','Quicksand','Rubik','Work Sans'];
+
+      var html = ''+
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;">'+
+          '<div style="color:#aaa;">This is a hive for infinite ideas</div>'+
+          '<button id="styleReset" class="ui-btn">Reset</button>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;gap:14px;">'+
+          '<div>'+
+            '<div style="color:#ccc;margin-bottom:6px;">Hex border color</div>'+
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'+
+              '<input id="hexColorPicker" type="color" value="'+savedColor+'" style="width:42px;height:32px;border:0;background:transparent;padding:0;">'+
+              [
+                // Golds / Yellows
+                '#ffcc33','#ffd43b','#ffff33',
+                // Basics
+                '#C0C0C0', /* Silver */ '#FFFFFF', /* White */ '#FFA500', /* Orange */
+                // Neons
+                '#39FF14', /* Neon Green */ '#00FF7F', /* Spring Green */ '#7CFC00', /* LawnGreen */ '#00FFFF', /* Neon Cyan */ '#FF6EC7', /* Neon Pink */ '#BC13FE', /* Neon Purple */ '#FF5F1F', /* Neon Orange */ '#1F51FF', /* Electric Blue */ '#FF3131' /* Neon Red */
+              ].map(function(c){return '<button class="ui-btn" data-color="'+c+'" style="background:'+c+';border-color:'+c+';color:#000;min-width:28px;height:28px;padding:0;border-radius:6px;"></button>';}).join('')+
+            '</div>'+
+          '</div>'+
+          '<div>'+
+            '<div style="color:#ccc;margin-bottom:6px;">Site font</div>'+
+            '<select id="fontSelect" style="width:100%;padding:8px;background:#111;border:1px solid #ffcc33;color:#eee;border-radius:6px;">'+
+              fonts.map(function(f){ return '<option value="'+f+'"'+(f===savedFont?' selected':'')+'>'+f+'</option>'; }).join('')+
+            '</select>'+
+          '</div>'+
+        '</div>'+
+        '<style>.ui-btn{background:#151515;border:1px solid #ffcc33;color:#ffda4d;padding:6px 12px;border-radius:8px;cursor:pointer;transition:filter 0.2s ease;} .ui-btn:hover{filter:brightness(1.2);}</style>';
+
+      contentEl.innerHTML = html;
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+
+      // Wire color picker and swatches
+      try {
+        var picker = document.getElementById('hexColorPicker');
+        if (picker) {
+          picker.addEventListener('input', function(){ applyHexBorderColor(this.value); });
+        }
+        Array.prototype.slice.call(contentEl.querySelectorAll('button.ui-btn[data-color]')).forEach(function(btn){
+          btn.addEventListener('click', function(){ var c = this.getAttribute('data-color'); var inp = document.getElementById('hexColorPicker'); if (inp) inp.value = c; applyHexBorderColor(c); });
+        });
+      } catch(_e) {}
+
+      // Wire font selector
+      try {
+        var sel = document.getElementById('fontSelect');
+        if (sel) sel.addEventListener('change', function(){ loadSelectedFont(this.value); });
+      } catch(_e) {}
+
+      // Wire reset button
+      try {
+        var reset = document.getElementById('styleReset');
+        if (reset) reset.addEventListener('click', function(){ resetStyleSettings(); });
+      } catch(_e) {}
+    }
 
     // AutoTrader controls
     function openAutoTraderPanel() {
