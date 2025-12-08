@@ -605,6 +605,55 @@
       z-index: 1;
     }
     .auto-close:hover { filter: brightness(1.2); }
+    /* Music external full-window panel */
+    .music-external-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10008;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .music-external-backdrop.show { opacity: 1; pointer-events: auto; }
+    .music-external-panel {
+      width: 100vw;
+      height: 100vh;
+      background: #0b0b0b;
+      position: relative;
+      overflow: hidden;
+    }
+    #musicExternalFrame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #111;
+    }
+    .music-external-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid #ffcc33;
+      color: #ffda4d;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: filter 0.2s ease;
+      z-index: 2;
+    }
+    .music-external-close:hover { filter: brightness(1.2); }
   </style>
 </head>
 <body>
@@ -695,6 +744,14 @@
     <div class="suggestions-panel">
       <button id="suggestionsClose" class="suggestions-close" aria-label="Close">✕</button>
       <iframe id="suggestionsFrame" src="" title="Suggestions" referrerpolicy="no-referrer"></iframe>
+    </div>
+  </div>
+
+  <!-- Music external full-window panel -->
+  <div id="musicExternalBackdrop" class="music-external-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="music-external-panel">
+      <button id="musicExternalClose" class="music-external-close" aria-label="Close">✕</button>
+      <iframe id="musicExternalFrame" src="" title="Music" allow="autoplay; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe>
     </div>
   </div>
 
@@ -1043,7 +1100,7 @@
           if (best && best.g) {
             musicGroup = best.g; musicGroup.classList.add('music');
             musicGroup.addEventListener('click', function(){ openMusicPanel(); });
-            musicGroup.addEventListener('contextmenu', function(e){ e.preventDefault(); var t = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', t ? (t.textContent||'') : 'Music'); });
+            musicGroup.addEventListener('contextmenu', function(e){ e.preventDefault(); e.stopImmediatePropagation(); openMusicExternalPanel(); });
             musicGroup.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openMusicPanel(); }});
             var mt = musicGroup.querySelector('text'); if (mt) { mt.textContent = 'Music'; }
           }
@@ -1095,7 +1152,17 @@
                   clone.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); });
                   clone.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); e.stopImmediatePropagation(); if (clickHandler) clickHandler(); }});
                   // Keep right-click info panel default unless caller overrides later
-                  clone.addEventListener('contextmenu', function(e){ e.preventDefault(); var tx = this.querySelector('text'); openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : displayLabel); });
+                  clone.addEventListener('contextmenu', function(e){
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    var tx = this.querySelector('text');
+                    var labelText = tx ? (tx.textContent||'').trim() : displayLabel;
+                    if (labelText === 'Music') {
+                      openMusicExternalPanel();
+                    } else {
+                      openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : displayLabel);
+                    }
+                  });
                   return clone;
                 }
                 var shopGr = labelToGroup['Shop'] || null;
@@ -2050,6 +2117,54 @@
           }
         }
       });
+    })();
+
+    // Music external site panel (right-click on Music)
+    function openMusicExternalPanel() {
+      try {
+        var focus = document.getElementById('focusOverlay');
+        if (focus) { focus.classList.remove('show'); focus.setAttribute('aria-hidden','true'); }
+      } catch(_e) {}
+      var stdPanel = document.getElementById('panelBackdrop');
+      if (stdPanel) { stdPanel.classList.remove('show'); stdPanel.setAttribute('aria-hidden','true'); }
+      var autoBd = document.getElementById('autoTraderBackdrop');
+      if (autoBd) { autoBd.classList.remove('show'); autoBd.setAttribute('aria-hidden','true'); }
+      var sugBd = document.getElementById('suggestionsBackdrop');
+      if (sugBd) { sugBd.classList.remove('show'); sugBd.setAttribute('aria-hidden','true'); }
+      var backdrop = document.getElementById('musicExternalBackdrop');
+      var frame = document.getElementById('musicExternalFrame');
+      if (!backdrop || !frame) return;
+      try { frame.removeAttribute('src'); } catch(_e) {}
+      var ts = new Date().getTime();
+      frame.src = 'https://hemphive.github.io/VS/?t=' + ts;
+      backdrop.classList.add('show');
+      backdrop.setAttribute('aria-hidden','false');
+    }
+    function closeMusicExternalPanel() {
+      var backdrop = document.getElementById('musicExternalBackdrop');
+      var frame = document.getElementById('musicExternalFrame');
+      if (frame) {
+        try { frame.src = 'about:blank'; } catch(_e) {}
+        try { frame.removeAttribute('src'); } catch(_e) {}
+      }
+      if (backdrop) {
+        backdrop.classList.remove('show');
+        backdrop.setAttribute('aria-hidden','true');
+      }
+    }
+    (function(){
+      try {
+        var mec = document.getElementById('musicExternalClose');
+        var meb = document.getElementById('musicExternalBackdrop');
+        if (mec) mec.addEventListener('click', closeMusicExternalPanel);
+        if (meb) meb.addEventListener('click', function(e){ if (e.target && e.target.id === 'musicExternalBackdrop') closeMusicExternalPanel(); });
+        window.addEventListener('keydown', function(e){
+          if (e.key === 'Escape') {
+            var b = document.getElementById('musicExternalBackdrop');
+            if (b && b.classList.contains('show')) closeMusicExternalPanel();
+          }
+        });
+      } catch(_e) {}
     })();
 
     // Music panel & player
