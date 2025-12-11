@@ -147,6 +147,10 @@
     .hex-cell:hover .cell-label { opacity: 1; }
     .hex-cell.music.playing .cell-label { opacity: 0.4; }
     .hex-cell.music.playing:hover .cell-label { opacity: 1; }
+    /* Make button labels visible on smaller mobile widths without changing layout scaling */
+    @media (max-width: 600px) {
+      .cell-label { opacity: 1 !important; }
+    }
 
     /* Modal panel */
     .panel-backdrop {
@@ -1099,9 +1103,9 @@
           var musicGroup = null;
           if (best && best.g) {
             musicGroup = best.g; musicGroup.classList.add('music');
-            musicGroup.addEventListener('click', function(){ openMusicPanel(); });
-            musicGroup.addEventListener('contextmenu', function(e){ e.preventDefault(); e.stopImmediatePropagation(); openMusicExternalPanel(); });
-            musicGroup.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openMusicPanel(); }});
+            musicGroup.addEventListener('click', function(){ openMusicExternalPanel(); });
+            musicGroup.addEventListener('contextmenu', function(e){ e.preventDefault(); e.stopImmediatePropagation(); openMusicPanel(); });
+            musicGroup.addEventListener('keydown', function(e){ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); openMusicExternalPanel(); }});
             var mt = musicGroup.querySelector('text'); if (mt) { mt.textContent = 'Music'; }
           }
 
@@ -1157,8 +1161,8 @@
                     e.stopImmediatePropagation();
                     var tx = this.querySelector('text');
                     var labelText = tx ? (tx.textContent||'').trim() : displayLabel;
-                    if (labelText === 'Music') {
-                      openMusicExternalPanel();
+                  if (labelText === 'Music') { 
+                    openMusicPanel();
                     } else {
                       openHexInfoPanel(this.getAttribute('data-hex-id')||'unknown', tx ? (tx.textContent||'') : displayLabel);
                     }
@@ -1171,7 +1175,7 @@
                 // Promote the original Music spot to Chat (top Music becomes Chat)
                 if (musicGroup) { musicGroup = overrideGroupTo('Chat', musicGroup, function(){ openPanel('Chat'); }); try { window.__chatGroup = musicGroup; } catch(_e) {} }
                 // Ensure the original AutoTrader spot becomes the bottom Music (restore a Music button)
-                if (autoTraderGroup) { autoTraderGroup = overrideGroupTo('Music', autoTraderGroup, openMusicPanel); }
+              if (autoTraderGroup) { autoTraderGroup = overrideGroupTo('Music', autoTraderGroup, openMusicExternalPanel); }
 
                 // Move ARC to the first Resources cell found (replaces that label)
                 try {
