@@ -14,6 +14,11 @@
   <meta name="author" content="HempHive" />
   <meta name="robots" content="index, follow" />
   
+  <!-- Fonts: Quicksand for labels -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet" />
+  
   <!-- Open Graph Meta Tags -->
   <meta property="og:title" content="HempHive • Welcome to the Future of Hemp Innovation" />
   <meta property="og:description" content="Discover the future of hemp innovation through interactive experiences, music streaming, and sustainable technology." />
@@ -143,13 +148,22 @@
     .hex-cell polygon { transition: stroke 0.2s ease, fill 0.2s ease, filter 0.2s ease; }
     .hex-cell:focus polygon,
     .hex-cell:hover polygon { stroke: #ffcc33; filter: drop-shadow(0 0 6px rgba(255,204,51,0.35)); }
-    .cell-label { fill: #ffcc33; font-weight: 700; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
+    .cell-label { fill: #ffcc33; font-weight: 700; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; font-family: 'Quicksand', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif; }
     .hex-cell:hover .cell-label { opacity: 1; }
     .hex-cell.music.playing .cell-label { opacity: 0.4; }
     .hex-cell.music.playing:hover .cell-label { opacity: 1; }
-    /* Make button labels visible on smaller mobile widths without changing layout scaling */
+    /* Mobile label animation: fade in/out every 10s so labels aren't always visible */
+    @keyframes labelPulse {
+      0% { opacity: 0; }
+      2.5% { opacity: 1; }   /* quick fade-in (~0.5s on a 20s cycle) */
+      50% { opacity: 1; }     /* stay visible for ~10s */
+      52.5% { opacity: 0; }   /* quick fade-out (~0.5s) */
+      100% { opacity: 0; }    /* stay hidden for ~9s */
+    }
     @media (max-width: 600px) {
-      .cell-label { opacity: 1 !important; }
+      .cell-label {
+        animation: labelPulse 20s linear infinite;
+      }
     }
 
     /* Modal panel */
@@ -320,6 +334,7 @@
       transform: translateY(6px);
       letter-spacing: 0.5px;
       font-weight: 600;
+      font-family: 'Quicksand', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
       text-shadow: 0 0 10px rgba(255, 204, 51, 0.35), 0 0 20px rgba(255, 153, 0, 0.25);
       transition: opacity 0.25s ease, transform 0.25s ease;
       padding: 0 6px;
@@ -654,10 +669,11 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transition: filter 0.2s ease;
+      transition: filter 0.2s ease, opacity 0.3s ease;
       z-index: 2;
     }
     .music-external-close:hover { filter: brightness(1.2); }
+    .music-external-close.faded { opacity: 0; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -2143,6 +2159,33 @@
       frame.src = 'https://hemphive.github.io/VS/?t=' + ts;
       backdrop.classList.add('show');
       backdrop.setAttribute('aria-hidden','false');
+      // Show close button and start inactivity fade timer
+      try {
+        var closeBtn = document.getElementById('musicExternalClose');
+        if (closeBtn) closeBtn.classList.remove('faded');
+        if (window.__musicCloseFadeTimer) { clearTimeout(window.__musicCloseFadeTimer); window.__musicCloseFadeTimer = null; }
+        function resetMusicExternalCloseFade() {
+          var btn = document.getElementById('musicExternalClose');
+          if (btn) btn.classList.remove('faded');
+          if (window.__musicCloseFadeTimer) clearTimeout(window.__musicCloseFadeTimer);
+          window.__musicCloseFadeTimer = setTimeout(function(){
+            var b = document.getElementById('musicExternalClose');
+            if (b) b.classList.add('faded');
+          }, 5000);
+        }
+        window.__musicExternalReset = resetMusicExternalCloseFade;
+        // Attach activity listeners (once)
+        if (!window.__musicExternalHandlersAttached) {
+          var activityTargets = [document, backdrop];
+          var activityEvents = ['mousemove','mousedown','touchstart','touchmove','wheel','keydown'];
+          activityTargets.forEach(function(t){
+            activityEvents.forEach(function(ev){ t.addEventListener(ev, resetMusicExternalCloseFade, { passive: true }); });
+          });
+          window.__musicExternalHandlersAttached = true;
+        }
+        // Arm the timer initially
+        resetMusicExternalCloseFade();
+      } catch(_e) {}
     }
     function closeMusicExternalPanel() {
       var backdrop = document.getElementById('musicExternalBackdrop');
@@ -2155,6 +2198,12 @@
         backdrop.classList.remove('show');
         backdrop.setAttribute('aria-hidden','true');
       }
+      // Clear inactivity timer and make close button visible again
+      try {
+        if (window.__musicCloseFadeTimer) { clearTimeout(window.__musicCloseFadeTimer); window.__musicCloseFadeTimer = null; }
+        var btn = document.getElementById('musicExternalClose');
+        if (btn) btn.classList.remove('faded');
+      } catch(_e) {}
     }
     (function(){
       try {
